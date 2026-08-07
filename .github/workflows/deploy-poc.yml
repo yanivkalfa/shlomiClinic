@@ -1,0 +1,48 @@
+# Builds the POC on every push to main and publishes the build output to the
+# `example` branch. Point GitHub Pages at `example` (Settings -> Pages ->
+# Deploy from a branch -> example / root). `main` holds the full project and
+# never serves Pages; `example` holds only the built POC site.
+name: Deploy POC to example branch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'POC/**'
+      - '.github/workflows/deploy-poc.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-poc
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: POC/package-lock.json
+
+      - name: Install
+        working-directory: POC
+        run: npm ci
+
+      - name: Build
+        working-directory: POC
+        run: npm run build
+
+      - name: Publish POC/dist to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: POC/dist
+          publish_branch: example
+          commit_message: 'Deploy POC build from ${{ github.sha }}'

@@ -1,0 +1,290 @@
+First and most important - Read from start to the end of my message, if anything is not 100% clear - don't generate any code, stop everything and ask me about the subject.
+
+I need a website dummy built to demonstrate the work-flow of my site. it should be client side fully functional. I don't need any server side work done yet.
+
+Website Language should be changeable - every text, title and entry should be translated to hebrew - completely and on all pages / modules / popups etc.
+Add small en \ heb on top to switch languages, default is eng and i'll describe the site using that language. make sure the heb version is RTL.
+I DO NOT WANT TO ENCOUNTER ANY TEXT WHAT SO EVER ANYWHERE WHICH IS NOT BEING TRANSLATED!
+
+Building guidlines:
+- I need everything to be built in a single .html file for me to download and open.
+- Tech stack - Use latest and most sophisticated tech stack, Vite + React if there's nothing better. It must be able to directly recieve images from my Cannon digital camera connected by USB - for the moment it can be mocked but consider it for final design building approach.
+- Build a custom JSON dictionary so you will be able to translate everything.
+- Integrate libraries as you see fit. eg. FullCalendar (for the schedule), Cropper.js (for the profile photo zoom/crop UI), and Chart.js (for finances) can be used but not a must.
+- State Persistence - no data should be saved - no need to use localstorage.
+- Integrate anything required, like FullCalendar (for the schedule), Cropper.js (for the profile photo zoom/crop UI), and Chart.js (for the finance/stats area).
+- dont save anything!
+
+The design is for an aesthetics clinic that specializes in facial injections.
+It should be styled with Deep-blue and Orange-Golden colors with dynamic background, Warm beauty saloon lightning, futuristic and clean, slightly rounded borders on blocks.
+
+Throughout my instructions I will state: [optional line - toggle via app options page] These will have specific entries on the options page to enable/disable from the options page.
+
+Make sure you "make up" dummy entries - at least 2 - for everything so i'll be able to navigate through the pages and check everything, also create example images when required.
+Add small icons as you see fit when needed - Like a dollar icon next to "Cash" payment method.
+
+We are building only the admin side now.
+On load it will have a Login page for the current admin (make a dummy)
+
+General build for admin side:
+3 Panels layout, Menu/Content/Tools.
+
+A. left panel - actions menu - top to bottom:
+-. quick user access - integrate the page (specified below) for quick user access into a div.
+-. Quick payment charge botton - popup screen for applying a quick payment charge.
+-. Home page
+-. Appointments - opens the "Full calendar page"
+-. Messaging - notes / alerts and messages from the system and from admins/users.
+-. Users mangement - Access all users info.
+-. Finances.
+-. Inventory.
+-. Orders.
+-. Legal forms.
+-. App settings.
+
+B. middle panel - content - changes according to page - pages will be described ahead.
+
+C. right panel - top to bottom: has 4 blocks, Can be collapsed if required for mobile view.
+-1. Icons for quick access - +alerts/msg, +notes, +quick payment charge.
+-2. A Monthly interactive calendar that lets us jump to specific date on the "Full calendar page" on click.
+-3. Clinic pulse - An area to display important alerts and notes. It's content top-to-bottom:
+-- Today's revenue
+-- Pending payments
+-- Patients this week
+-- admin notes - last 3 notes.
+-4. Today's scheduled treatments:
+eg. -- lip filler | count. ; Full face | count etc
+
+Additional content for the right panel will be decribed for each page if required.
+
+Pages:[description start marked by ############### P.]
+Templates to be used in pages will be integrated into pages by [T: template name], Their creation info will be described by ############### T.
+
+###############
+P. Full calendar page.
+By admin option for 'calendar to use' either use a local calendar for schedule or a known service like google calendar.
+Integrate the calendar to occupy the entire main content space default view is Month view. Use FullCalendar for google implementation.
+* built in calendar option will be added in later version if required.
+* for this MOCK build - mock entries for the calendar.
+
+###############
+P. Welcome screen / home page
+- middle content - top to bottom:
+A. Today's date, time and weather like acuweather widget - Time should be dynamic and active, if possible also the weather. Updates should be every 30 minutes for weather - for now mock the weather as well.
+B. a nicely designed welcome message to the admin and a written hint of what's expected today - gathered info from the todo list / schedule - like "Welcome gorgeous, you have 10 lips and 5 full face Botox treatments today", it should have small x to close this div.
+C. Todays schedule - built like Google Calendar daily view. Block's build description - refer "|" as data horizontal seperator for the block.
+Time | Patient's pic | Name + Surname; under it add his Phone number| Procedure for current visit | Payment status (for today's visit) | Last visit: date ; under it list the treatments done on last visit | How many visits this user have and how much money he has spend in our clinic so far | Have a small Icon for notes of that user
+- Alerts: A separate line for any alerts for the user - allergies \ health conditions \ unpleasant patient.
+* Spaces within the 'block' for each entry must be constant - don't allow any misalignment between blocks.
+
+Today's schedule content build instructions:
+Devides into timed blocks top to bottom according to the hours set by reading google's calendar entry for 6:00 for that day.
+I will manually create entries on google's calendar specifying the working hours in the event title by "Clinic Open H-H, H-H, H-H" eg. "Clinic Open 8-12, 13-14, 18-20",
+read that title and parse for hours, the 'Diary' will be opened within these hours - this method will allow me to edit the opening hours freely using the app I already use everyday.
+If 'diary' is opened 8:00 to 12:00, the Scheduled blocks will occupy spaces relative to their duration between 8:00 and 12:00,
+they will be placed on the init time and will occupy space till the end time of the defined visit - as it is in google's calendar daily view.
+Each appointment has it's own div block and on click opens the 'Visit page' for this block.
+These blocks on the schedule are moveable on the diary by dragging and sorting.
+Dragging over switches the time scheduled for the dragged appointment block according to the new drop location in accordance to the daily hour table.
+Unscheduled time is Spliced out to allow more room for appointment blocks.
+Active appointment blocks are greenishly highlighted very gently, 'missed' appointments - time has reached but they haven't been 'activated' yet are highlighted with mild orange, if time has passed and that appointment was never activated it will be marked in red.
+
+###############
+T. User Full size header
+- middle content -
+A. 2 part user info [doesn't have to be a <table>], to the left - Profile picture, To the right top to bottom user details.
+
+Column A:
+profile picture - onclick:
+- If absent - popup profile window.
+- If present - lightbulb enlargement, add a small edit icon floating on the right bottom corner to popup the "Profile photo popup window".
+
+Coulmn B - top to bottom:
+- full name | age | ID | Wallet points | Alert icon | Notes icon
+- Phone number | email
+- Address
+- empy spacer
+- Icons for major networks that indicates if this user is following/subscribed to our account on these. Display the major networks Icons even if the user is not subscribed / following and indicated that he is not following / subscribed to us so we'll be able to tell him to do so.
+- Notes: hidden by default, "Show notes" botton - on click displays admin notes fot that the patient. an edit button that pops up a screen to edit the notes.
+- Alerts: A line for any alerts for the user - allergies \ health conditions \ unpleasant patient.
+- [optional line - toggle via app options page] A treated member since [Date], Had [Number] of procedures, for a total cost of [Total cost], Last visit [Date].
+
+
+###############
+P. Visit page.
+Integrate [T. User Full size header]
+
+Active visit - Date and Time (Scheduled for the appointment) - Duration: active Time counter
+Start button to set this visit as active, Pause to pause and End to save details and close this visit.
+Add payment button will pop-up the "Quick payment charge" page to add payment for this treatment.
+
+Visit treatment plan: List all treatments and products for this visit | Cost: Total cost | Payment Status.
+
+Visit book:
+Add new button that pops up UI for uploading / taking a shot directly, let the user choose if it's before / after and update the visit book acordingly.
+devide content into 2, Before and After.
+Place an An arrow in the middle -horizontally and vertically- of the content area.
+Add the photos to the proper side of the area.
+
+###############
+P. User page
+Integrate [T. User Full size header]
+
+Visits [table with all visits, pagination if required]:
+Before pic (small arrow to) After pic | Date | Treatments list | Treatment's products list | Treatment cost list |Total cost | Payment status| Icon that links to Treatment info page. | Icon for this user's informed concent and health declaration papers kept for each visit.
+[optional line - toggle via app options page] Add line to summarize all visits count and costs.
+Payment status can be: 'paid, pending, partial payment + Sum already paid'.
+
+Payments: [A table with all of the user's payments, pagination if required]
+Date | Type | Amount | Status | Treatment
+
+Tabs for benefits / referrals:
+Rewards [table with all earned Rewards, pagination if required]:
+A button to grant the user a reward - Pops up the reward popup window.
+Reward name - Value [Percent, Wallet points, Cash] | Date granted - Date expires | Restrictions [Lips only / Boutux only etc] | status [active/used/expired] | Actual value [if redeemed]
+
+Referrals [table with all of his referrals, pagination if required]:
+Referred users - numer | Referred users earned wallet points - number.
+profile picture | full name |
+
+###############
+P. Treatment info page
+[T: User quick info template]
+Treatment name as a title. Date on the other side.
+Products: [list all products used for that treatment] Product box image | Company name | Product name | amount used.
+An interface devided to 3 parts, in the middle a comparison view with 2 options top/bottom and side by side have an icon to toggle views, On the left side the before images thumbs and on the right side the after. Onclick of a before/after thumb the image will be paste to it's block on the comparison view, the user will be able to move the image in that view area and zoom in \ out.
+Make sure you create at least 3 images on each side as dummies
+
+
+###############
+P. Profile photo popup window
+Tabs for: Take a new photo | Upload photo | Edit photo
+- Take a new photo should be camera intergrated.
+- If there is no photo hide the Edit photo.
+- Edit window should let us move the photo around, focus on specific area by cropping, zoom in / out.
+
+###############
+P. Quick user access page: [Should be able to have it intergrated into menus/pop windows etc.]
+Have an input box to search a user by username / phone number / ID - Go button.
+- If there is no match - indicate it.
+- If a unique user was found open his profile.
+- If there are multiple matches - display a popup with all matches: small profile image | Full name | phone number - let the admin choose the match by click.
+
+###############
+P. Quick payment charge
+A popup page - Content top to bottom:
+- Payment by: [T: User quick info template]
+- If The quick payment charge window was accessed from a user profile page / current treatment / any USER associated page that has his ID - Automatically choose him as the payment user.
+- If the quick payment charge window cannot be associated with a user ID -> integrate the "Quick user access page" for quick search of an ID.
+
+- List all treatments this user have registered and are 'pending', each has it's own block - Date | Treatment | Sum left to pay.
+Add a payment for that user, details: date, type radio: Credit / Cash / Bit / Paybox / Bank transfer / Wallet, Sum.
+- Let the user pay up to the maximum sum left to pay. On sum update calculate and write how much will be left to pay after payment is completed.
+- A checkbox to print a reciept.
+###############
+T. User quick info template
+Small profile photo | Full name | Wallet points.
+
+###############
+P. Reward popup window - Lets the admin reward the user.
+Top to bottom content:
+- Reward [user info] Small profile photo | Full name | Wallet points.
+- If The Reward popup window was accessed from a user profile page / current treatment / any USER associated page that has his ID - Automatically choose him as the rewarded user.
+- If the Reward popup window cannot be associated with a user ID -> integrate the "Quick user access page" for quick search of an ID.
+- Integrate the 'Rewards creation page' here.
+Create the Reward for the specified associated user.
+
+###############
+P. Rewards creation page
+- Reward description: inputbox | Reward date: Init date - (date-chooser) until - end date (date-chooser). Make sure the date-chooser icon is visible.
+- Reward restrictions: list all available procedure's names and let the user choose them, add a "clear choices" and a "choose all" buttons.
+Do not use checkboxes, the user chooses by clicking the text which highlights the choice.
+- Reward conditions: 'Birthday month', 'Number of visits', 'Number of treatments', 'Money spent', 'Wallet points', 'Referred user count', 'Membership duration', 'Frequency of visits' and 'Coupon Text' | Condition term (equals, greater then, less then, not) | Condition value - if condition value meets the condition term then allow to use/grant the reward.
+Since 'Birthday month' has no specific value we can use smart values using # symbol like, #CurrentMonth, #CurrentYear to use functions in the code.
+
+###############
+P. Users management.
+A button to "Add a new user" which pops up the "Add new user popup page" page.
+A sortable searchable table with pagination if required.
+List all users and add a button that links to each patient's page, Last visit date, next scheduled visit, pending payment alert, an icon for notes and an icon for alerts.
+
+###############
+P. Add new user popup page.
+Let the admin create a new user details:
+Profile photo, ID, First name, last name, birth date, phone, email address, medical alerts, notes
+Use the "Profile photo popup window" for the photo.
+
+###############
+P. Finances
+Tabs: Payments | Stats | Campaigns & Discounts | Referral system
+
+Payments:
+A "Quick Charge button' to apply a quick charge and add a payment.
+[table is sortable and search-able / allows filterring by date]
+Date | Sum| Procedure | Full user name | Visit date | Payment type | Edit button with password protection for edits, use the quick charge window format for edits.
+
+Stats:
+Table:
+Column A:
+Earnings:
+Today's earning: number
+Current month's earning: number
+Last month's earning: number
+Last 3 month's earning: number
+This quarter's (Months x->y) earning: number
+Last quarter (Months x->y) earning: numer
+This year's earning: number.
+
+Column B:
+Orders:
+Currents month's orders: number
+Last month's orders: number
+Last 3 month's orders: number
+Last quarter's orders: number
+This year's orders: number
+
+Campaigns & Discounts:
+A button 'Launch a campaign' to add a new entry - opens the "Launch a campaign page".
+Name | Date init - Date expires | Value percent | Raw value | Code | Limits
+Table entries are double-click-able for editing.
+
+Referral system:
+list patients who have referrals - small image | full name | referral count | his benefit from referrals | Our total earnings from him and his referrals.
+
+###############
+P. Launch a campaign page.
+Integrate the Rewards creation page and create the Reward for all users as a global campaign.
+
+###############
+P. Inventory & Products
+A button 'Add product' to add a new entry by the same values as bellow.
+Product box image (allow editing - for image focusing or uploading a new image) | Product Name | Company | Common use | packaging | notes | Count on shelf | Icon for deletion.
+Table entries are double-click-able for editing.
+###############
+P. Orders
+A button 'Add order' to add a new entry by same values as bellow.
+Product Name | date | seller | batch count | cost | notes | Icon for deletion.
+Table entries are double-click-able for editing.
+
+###############
+P. Legal forms.
+Add new form button that opens the "Form creation page".
+A table to display all forms created.
+Date created | Form name | Actions - Edit / Delete
+
+###############
+P. Form creation page.
+A dynamic form creation page, it should let the user dynamically add:
+- a richtext box
+- a toggled question - Free form text input for the question, response options are yes\no toggle.
+- a free form question text and free form response options text, use + to add more options text.
+- Signature area with dynamic current date of signature.
+
+###############
+P. App settings.
+- Theme options - 5 Preset Color schemes each uses 3 colors combination include Bright and Dark schemes/ Custom scheme | Design options - corners rounding by percent, font sizes by slider - have 5 size levels, Toggle shadows for boxes and blocks, Toggle borders for entries and blocks.
+- calendar to use: Radio for google / built in. If google is chosen let the user specify the details required to intergrate it to our page.
+- for google use FullCalendar.
+- Toggle buttons for optional lines stated above.
+
+

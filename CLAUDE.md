@@ -20,7 +20,7 @@ npm run preview    # serve the build locally
 ```
 
 - **Branch model**: `main` holds the full project source. `.github/workflows/deploy-poc.yml` builds the POC on every push to `main` that touches `POC/` and publishes `POC/dist` to the **`example`** branch — that branch holds only the built site and is the GitHub Pages source (`main` never serves Pages). Vite `base` is `'./'` so the build works under the Pages subpath.
-- **Pages not yet enabled**: the repo is private and the free GitHub plan doesn't serve Pages from private repos. Pending owner decision: make repo public, upgrade to Pro, or point Netlify/Cloudflare Pages at the `example` branch.
+- **Live demo**: https://yanivkalfa.github.io/shlomiClinic/ (GitHub Pages, serving the `example` branch; repo was made public on 2026-08-07 to enable this).
 - Demo login: `shlomi` / `clinic123` (defined in `POC/src/data.js` as `ADMIN`).
 - All state is in-memory by design (spec: "don't save anything") — no localStorage.
 - Every user-visible string goes through `POC/src/i18n.jsx` (`t()`/`L()`); dummy data values are bilingual `[en, he]` arrays resolved by `L()`.

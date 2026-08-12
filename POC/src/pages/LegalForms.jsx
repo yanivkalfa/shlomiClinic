@@ -56,14 +56,19 @@ function FormBuilder({ form, onBack }) {
   const { t, L } = useLang();
   const { addForm, updateForm, showToast } = useStore();
   const [name, setName] = useState(form ? L(form.name) : '');
-  const [blocks, setBlocks] = useState(form ? form.blocks.map((b) => ({ ...b, q: b.q ? L(b.q) : undefined, html: b.html ? L(b.html) : undefined, options: b.options ? b.options.map((o) => L(o)) : undefined })) : []);
+  const [blocks, setBlocks] = useState(form ? form.blocks.map((b) => ({
+    ...b,
+    q: b.q ? L(b.q) : undefined,
+    html: b.html ? L(b.html) : undefined,
+    options: b.options ? b.options.map((o) => ({ text: L(o.text), alert: !!o.alert })) : undefined,
+  })) : []);
   const [err, setErr] = useState(null);
 
   const add = (type) => setBlocks((bs) => [...bs, {
     id: genId(), type,
     ...(type === 'rich' ? { html: '' } : {}),
-    ...(type === 'toggle' ? { q: '' } : {}),
-    ...(type === 'options' ? { q: '', options: [''] } : {}),
+    ...(type === 'toggle' ? { q: '', alert: false } : {}),
+    ...(type === 'options' ? { q: '', options: [{ text: '', alert: false }] } : {}),
   }]);
   const patch = (id, p) => setBlocks((bs) => bs.map((b) => (b.id === id ? { ...b, ...p } : b)));
   const remove = (id) => setBlocks((bs) => bs.filter((b) => b.id !== id));
@@ -73,8 +78,11 @@ function FormBuilder({ form, onBack }) {
     const norm = blocks.map((b) => ({
       id: b.id, type: b.type,
       ...(b.type === 'rich' ? { html: [b.html || '', b.html || ''] } : {}),
-      ...(b.type === 'toggle' ? { q: [b.q || '', b.q || ''] } : {}),
-      ...(b.type === 'options' ? { q: [b.q || '', b.q || ''], options: (b.options || []).filter((o) => o.trim()).map((o) => [o, o]) } : {}),
+      ...(b.type === 'toggle' ? { q: [b.q || '', b.q || ''], alert: !!b.alert } : {}),
+      ...(b.type === 'options' ? {
+        q: [b.q || '', b.q || ''],
+        options: (b.options || []).filter((o) => o.text.trim()).map((o) => ({ text: [o.text, o.text], alert: !!o.alert })),
+      } : {}),
     }));
     if (form) updateForm(form.id, { name: [name, name], blocks: norm });
     else addForm({ name: [name, name], blocks: norm });
@@ -99,6 +107,10 @@ function FormBuilder({ form, onBack }) {
         {err && <div className="err">{err}</div>}
       </div>
 
+      <div className="card" style={{ padding: '.7em 1em' }}>
+        <span className="row muted"><Icon name="alert" size={14} />{t('fb.alertHint')}</span>
+      </div>
+
       <div className="row" style={{ flexWrap: 'wrap' }}>
         <span className="muted">{t('fb.addBlock')}</span>
         <button className="btn ghost sm" onClick={() => add('rich')}><Icon name="doc" size={13} />{t('fb.addRich')}</button>
@@ -115,6 +127,10 @@ function FormBuilder({ form, onBack }) {
             <div className="row" style={{ flexWrap: 'wrap' }}>
               <input style={{ flex: 1, minWidth: '14em' }} placeholder={t('fb.qPlaceholder')} value={b.q} onChange={(e) => patch(b.id, { q: e.target.value })} />
               <span className="row"><span className="chip on">{t('common.yes')}</span><span className="chip">{t('common.no')}</span></span>
+              <label className="chip" title={t('fb.alertHint')}>
+                <input type="checkbox" checked={!!b.alert} onChange={(e) => patch(b.id, { alert: e.target.checked })} />
+                <Icon name="alert" size={12} />{t('fb.alertFlag')}
+              </label>
             </div>
           )}
           {b.type === 'options' && (
@@ -123,12 +139,17 @@ function FormBuilder({ form, onBack }) {
               {(b.options || []).map((o, i) => (
                 <div key={i} className="row">
                   <Icon name="chevR" size={12} />
-                  <input style={{ flex: 1 }} placeholder={t('fb.optPlaceholder')} value={o}
-                    onChange={(e) => patch(b.id, { options: b.options.map((x, j) => (j === i ? e.target.value : x)) })} />
+                  <input style={{ flex: 1 }} placeholder={t('fb.optPlaceholder')} value={o.text}
+                    onChange={(e) => patch(b.id, { options: b.options.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)) })} />
+                  <label className="chip" title={t('fb.alertHint')}>
+                    <input type="checkbox" checked={!!o.alert}
+                      onChange={(e) => patch(b.id, { options: b.options.map((x, j) => (j === i ? { ...x, alert: e.target.checked } : x)) })} />
+                    <Icon name="alert" size={12} />{t('fb.alertFlag')}
+                  </label>
                   <button className="iconbtn" onClick={() => patch(b.id, { options: b.options.filter((_, j) => j !== i) })}><Icon name="x" size={12} title={t('common.delete')} /></button>
                 </div>
               ))}
-              <button className="btn ghost sm" style={{ alignSelf: 'flex-start' }} onClick={() => patch(b.id, { options: [...(b.options || []), ''] })}>{t('fb.addOpt')}</button>
+              <button className="btn ghost sm" style={{ alignSelf: 'flex-start' }} onClick={() => patch(b.id, { options: [...(b.options || []), { text: '', alert: false }] })}>{t('fb.addOpt')}</button>
             </div>
           )}
           {b.type === 'signature' && <SignaturePad />}

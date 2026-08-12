@@ -61,6 +61,17 @@ export function Icon({ name, size = 18, className = '', title }) {
   );
 }
 
+// Back navigation. The chevron flips in RTL — a directional glyph must mirror
+// with the layout, unlike neutral icons (phone, camera).
+export function BackButton({ onClick }) {
+  const { t, isRTL } = useLang();
+  return (
+    <button className="btn ghost sm" onClick={onClick}>
+      <Icon name={isRTL ? 'chevR' : 'chevL'} size={14} />{t('common.back')}
+    </button>
+  );
+}
+
 export function Modal({ onClose, children, className = '' }) {
   return (
     <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>

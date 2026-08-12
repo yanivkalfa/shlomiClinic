@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useLang } from '../i18n.jsx';
 import { useStore } from '../store.jsx';
-import { Icon, DataTable, Tabs, PayStatusTag } from '../components/common.jsx';
+import { Icon, DataTable, Tabs, PayStatusTag, BackButton } from '../components/common.jsx';
 import { UserFullHeader } from '../components/templates.jsx';
 
 export default function UserPage() {
   const { t, L, fmtDate, fmtMoney, fmtNum } = useLang();
   const {
-    nav, navigate, openPopup, userById, visitsOfUser, treatmentsOfVisit, prodsOfTreatment, productById, procById,
+    nav, navigate, goBack, openPopup, userById, visitsOfUser, treatmentsOfVisit, prodsOfTreatment, productById, procById,
     visitTotal, visitPayStatus, visitPaid, payments, treatments, rewards, rewardDefs, settings, referralsOfUser, treatmentById, visitById,
   } = useStore();
   const [tab, setTab] = useState('rewards');
@@ -113,6 +113,7 @@ export default function UserPage() {
 
   return (
     <div className="page">
+      <div className="row"><BackButton onClick={goBack} /></div>
       <UserFullHeader user={user} />
 
       <div className="card" style={{ padding: '1em' }}>

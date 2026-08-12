@@ -6,7 +6,8 @@ import { ADMIN } from '../data.js';
 
 export default function Login() {
   const { t, lang, setLang } = useLang();
-  const { setSession } = useStore();
+  const { setSession, settings } = useStore();
+  const clinicName = settings.clinicName.trim() || t('app.name');
   const [u, setU] = useState('');
   const [p, setP] = useState('');
   const [err, setErr] = useState(false);
@@ -24,9 +25,11 @@ export default function Login() {
           <button className={lang === 'en' ? 'on' : ''} onClick={() => setLang('en')}>{t('lang.en')}</button>
           <button className={lang === 'he' ? 'on' : ''} onClick={() => setLang('he')}>{t('lang.he')}</button>
         </div>
-        <div className="logo-big">S</div>
+        {settings.clinicLogo
+          ? <img className="logo-big" src={settings.clinicLogo} alt={clinicName} style={{ objectFit: 'cover' }} />
+          : <div className="logo-big">S</div>}
         <div>
-          <h1>{t('app.name')}</h1>
+          <h1>{clinicName}</h1>
           <div className="muted">{t('app.tagline')}</div>
         </div>
         <h2>{t('login.welcome')}</h2>

@@ -1,30 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useLang } from '../i18n.jsx';
 import { useStore } from '../store.jsx';
-import { Icon, PanZoomImg } from '../components/common.jsx';
+import { Icon, BackButton } from '../components/common.jsx';
+import { CompareView } from '../components/compare.jsx';
 import { UserQuickInfo } from '../components/templates.jsx';
-
-function CompareCell({ label, src }) {
-  const { t } = useLang();
-  const [pz, setPz] = useState({ x: 0, y: 0, scale: 1 });
-  return (
-    <div className="cmp-cell">
-      <span className="cmp-label tag partial">{label}</span>
-      {src ? (
-        <PanZoomImg src={src} state={pz} setState={setPz} style={{ maxWidth: '100%' }} />
-      ) : (
-        <span className="muted" style={{ padding: '1em', textAlign: 'center' }}>{t('ti.pickHint')}</span>
-      )}
-    </div>
-  );
-}
 
 export default function TreatmentInfo() {
   const { t, L, fmtDate } = useLang();
-  const { nav, treatmentById, visitById, userById, procById, prodsOfTreatment, productById } = useStore();
-  const [layout, setLayout] = useState('side');
-  const [selBefore, setSelBefore] = useState(0);
-  const [selAfter, setSelAfter] = useState(0);
+  const { nav, goBack, treatmentById, visitById, userById, procById, prodsOfTreatment, productById } = useStore();
 
   const tr = treatmentById(nav.params.treatmentId);
   if (!tr) return <div className="page"><div className="muted">{t('tbl.noData')}</div></div>;
@@ -32,10 +15,11 @@ export default function TreatmentInfo() {
   const user = userById(tr.userId);
   const proc = procById(tr.procId);
   const prods = prodsOfTreatment(tr.id);
-  const before = visit?.photos.before || [], after = visit?.photos.after || [];
 
   return (
     <div className="page">
+      <div className="row"><BackButton onClick={goBack} /></div>
+
       <div className="card" style={{ padding: '.9em 1.1em' }}>
         <UserQuickInfo user={user} />
       </div>
@@ -51,15 +35,17 @@ export default function TreatmentInfo() {
           <table className="tbl">
             <thead><tr><th>{t('inv.image')}</th><th>{t('ti.company')}</th><th>{t('ti.product')}</th><th>{t('ti.amountUsed')}</th></tr></thead>
             <tbody>
-              {prods.map((tp, i) => {
+              {prods.length === 0 ? (
+                <tr><td colSpan={4} className="muted" style={{ textAlign: 'center', padding: '1.2em' }}>{t('trt.noProducts')}</td></tr>
+              ) : prods.map((tp) => {
                 const p = productById(tp.productId);
                 if (!p) return null;
                 return (
-                  <tr key={i}>
+                  <tr key={tp.id}>
                     <td><img src={p.img} width={56} height={42} style={{ borderRadius: 6 }} alt={L(p.name)} /></td>
                     <td>{L(p.company)}</td>
                     <td><b>{L(p.name)}</b></td>
-                    <td>{L(tp.amount)}</td>
+                    <td>{tp.amount} {t(`unit.${tp.unit}`)}</td>
                   </tr>
                 );
               })}
@@ -69,33 +55,9 @@ export default function TreatmentInfo() {
       </div>
 
       <div className="card" style={{ padding: '1em' }}>
-        <div className="spread" style={{ marginBottom: '.6em' }}>
-          <h2 className="row"><Icon name="eye" size={18} />{t('up.before')} / {t('up.after')}</h2>
-          <span className="row">
-            <span className="muted">{t('ti.zoomHint')}</span>
-            <button className="btn ghost sm" onClick={() => setLayout((l) => (l === 'side' ? 'stack' : 'side'))}>
-              <Icon name="chart" size={14} />{t('ti.layout')}
-            </button>
-          </span>
-        </div>
-        <div className="cmp">
-          <div className="cmp-thumbs">
-            <span className="muted" style={{ textAlign: 'center' }}>{t('up.before')}</span>
-            {before.map((p, i) => (
-              <img key={i} src={p} className={selBefore === i ? 'sel' : ''} onClick={() => setSelBefore(i)} alt={`${t('up.before')} ${i + 1}`} />
-            ))}
-          </div>
-          <div className={`cmp-view ${layout}`}>
-            <CompareCell label={t('up.before')} src={before[selBefore]} />
-            <CompareCell label={t('up.after')} src={after[selAfter]} />
-          </div>
-          <div className="cmp-thumbs">
-            <span className="muted" style={{ textAlign: 'center' }}>{t('up.after')}</span>
-            {after.map((p, i) => (
-              <img key={i} src={p} className={selAfter === i ? 'sel' : ''} onClick={() => setSelAfter(i)} alt={`${t('up.after')} ${i + 1}`} />
-            ))}
-          </div>
-        </div>
+        <h2 className="row" style={{ marginBottom: '.6em' }}><Icon name="eye" size={18} />{t('cmp.title')}</h2>
+        <div className="muted" style={{ marginBottom: '.5em' }}>{t('ti.pickHint')}</div>
+        <CompareView before={visit?.photos.before || []} after={visit?.photos.after || []} />
       </div>
     </div>
   );

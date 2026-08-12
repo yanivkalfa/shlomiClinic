@@ -3,7 +3,7 @@ import { useLang } from '../i18n.jsx';
 import { useStore } from '../store.jsx';
 import { Icon, Modal, ModalHead, PanZoomImg, PayStatusTag } from './common.jsx';
 import { UserQuickInfo, QuickUserAccess } from './templates.jsx';
-import { genFace, ymd, now, PROCEDURES } from '../data.js';
+import { genFace, ymd, now } from '../data.js';
 
 // ---------- Profile photo popup: Take / Upload / Edit ----------
 export function PhotoPopup({ close, userId, onDone }) {
@@ -184,6 +184,7 @@ export function QuickPaymentPopup({ close, userId, treatmentId }) {
 // ---------- Rewards creation (embedded in RewardPopup + Launch Campaign) ----------
 export function RewardsCreation({ onCreate, createLabel }) {
   const { t, L } = useLang();
+  const { procedures } = useStore(); // restrictions list follows the live treatments catalog
   const [desc, setDesc] = useState('');
   const [dateInit, setDateInit] = useState(ymd(now()));
   const [dateEnd, setDateEnd] = useState('');
@@ -229,11 +230,11 @@ export function RewardsCreation({ onCreate, createLabel }) {
           <span className="muted">{t('rc.restrictions')}</span>
           <span className="row">
             <button className="btn ghost sm" onClick={() => setRestrictions([])}>{t('rc.clear')}</button>
-            <button className="btn ghost sm" onClick={() => setRestrictions(PROCEDURES.map((p) => p.id))}>{t('rc.chooseAll')}</button>
+            <button className="btn ghost sm" onClick={() => setRestrictions(procedures.map((p) => p.id))}>{t('rc.chooseAll')}</button>
           </span>
         </div>
         <div className="row" style={{ flexWrap: 'wrap' }}>
-          {PROCEDURES.map((p) => (
+          {procedures.map((p) => (
             <span key={p.id} className={`chip ${restrictions.includes(p.id) ? 'on' : ''}`} onClick={() => toggleR(p.id)}>{L(p.name)}</span>
           ))}
         </div>
@@ -334,6 +335,7 @@ export function AddUserPopup({ close }) {
         <label>{t('au.medAlerts')}<input value={f.alerts} onChange={set('alerts')} style={{ width: '100%' }} /></label>
         <label>{t('common.notes')}<input value={f.notes} onChange={set('notes')} style={{ width: '100%' }} /></label>
       </div>
+      <div className="muted row"><Icon name="alert" size={14} />{t('au.alertsFromForms')}</div>
       {err && <div className="err">{err}</div>}
       <button className="btn" onClick={create}><Icon name="plus" size={15} />{t('au.create')}</button>
       {showPhoto && <PhotoPopup close={() => setShowPhoto(false)} userId={null} onDone={(img) => setPhoto(img)} />}

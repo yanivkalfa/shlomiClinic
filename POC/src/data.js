@@ -46,6 +46,31 @@ export function genFace({ hue = 25, lips = 0.4, flaw = 0.5, blush = 0.15, varian
 </svg>`);
 }
 
+// Stylized treatment illustration: face silhouette + syringe, tinted per treatment
+export function genTreatmentImg(hue) {
+  return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="90">
+<defs><linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="hsl(${hue},55%,32%)"/><stop offset="1" stop-color="hsl(${(hue + 35) % 360},60%,18%)"/></linearGradient></defs>
+<rect width="120" height="90" rx="6" fill="url(#t)"/>
+<ellipse cx="46" cy="48" rx="26" ry="33" fill="hsl(28,50%,80%)"/>
+<path d="M20 34 Q46 6 72 34 Q72 18 46 13 Q20 18 20 34" fill="hsl(${(hue + 340) % 360},35%,22%)"/>
+<circle cx="37" cy="44" r="3.2" fill="hsl(215,55%,28%)"/><circle cx="55" cy="44" r="3.2" fill="hsl(215,55%,28%)"/>
+<ellipse cx="46" cy="64" rx="9" ry="4" fill="hsl(352,65%,58%)"/>
+<g transform="rotate(-32 92 44)">
+<rect x="76" y="40" width="30" height="8" rx="2" fill="rgba(255,255,255,.9)"/>
+<rect x="70" y="41.5" width="7" height="5" rx="1" fill="hsl(${hue},70%,60%)"/>
+<rect x="104" y="42.5" width="12" height="3" rx="1.5" fill="rgba(255,255,255,.75)"/>
+<rect x="78" y="41.5" width="16" height="5" fill="hsl(${hue},75%,55%)"/>
+</g>
+</svg>`);
+}
+
+export const DEFAULT_LOGO = svgUri(`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
+<defs><radialGradient id="l" cx="30%" cy="30%"><stop offset="0" stop-color="#f0bd63"/><stop offset="1" stop-color="#c07f22"/></radialGradient></defs>
+<circle cx="32" cy="32" r="30" fill="url(#l)"/>
+<text x="32" y="44" font-family="Georgia, serif" font-size="34" font-weight="bold" fill="#0e2a52" text-anchor="middle">S</text>
+</svg>`);
+
 export function genProductBox(hue, dark = false) {
   return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="90">
 <rect width="120" height="90" rx="6" fill="hsl(${hue},45%,${dark ? 28 : 88}%)"/>
@@ -65,29 +90,30 @@ export function genSignature(seed = 1) {
 }
 
 // ---- static catalogs (bilingual values are ['English', 'עברית']) ----
+// `products` on a procedure = the default product set + amounts pulled in when
+// the procedure is added to a visit. Units: ml | cc | units | n.
 export const PROCEDURES = [
-  { id: 1, name: ['Lip Filler', 'מילוי שפתיים'], cost: 1200, duration: 45, visitsCount: 1, longevity: ['6–9 months', '6–9 חודשים'] },
-  { id: 2, name: ['Full Face Botox', 'בוטוקס פנים מלא'], cost: 1800, duration: 60, visitsCount: 1, longevity: ['3–4 months', '3–4 חודשים'] },
-  { id: 3, name: ['Forehead Botox', 'בוטוקס מצח'], cost: 900, duration: 30, visitsCount: 1, longevity: ['3–4 months', '3–4 חודשים'] },
-  { id: 4, name: ['Cheek Filler', 'מילוי לחיים'], cost: 1500, duration: 45, visitsCount: 1, longevity: ['9–12 months', '9–12 חודשים'] },
-  { id: 5, name: ['Permanent Makeup — Lips', 'איפור קבוע — שפתיים'], cost: 1400, duration: 90, visitsCount: 2, longevity: ['1–2 years', '1–2 שנים'] },
-  { id: 6, name: ['Permanent Makeup — Eyebrows', 'איפור קבוע — גבות'], cost: 1100, duration: 75, visitsCount: 2, longevity: ['1–2 years', '1–2 שנים'] },
-  { id: 7, name: ['Jawline Contour', 'עיצוב קו לסת'], cost: 2200, duration: 60, visitsCount: 1, longevity: ['9–12 months', '9–12 חודשים'] },
-  { id: 8, name: ['Skin Booster', 'סקין בוסטר'], cost: 950, duration: 40, visitsCount: 3, longevity: ['4–6 months', '4–6 חודשים'] },
+  { id: 1, name: ['Lip Filler', 'מילוי שפתיים'], cost: 1200, duration: 45, visitsCount: 1, longevity: ['6–9 months', '6–9 חודשים'], img: genTreatmentImg(320), products: [{ productId: 1, amount: 1, unit: 'ml' }, { productId: 7, amount: 2, unit: 'n' }], alerts: [['Not suitable during pregnancy', 'לא מתאים בהריון']], notes: [['Ask about cold sores history', 'לשאול על היסטוריית הרפס']] },
+  { id: 2, name: ['Full Face Botox', 'בוטוקס פנים מלא'], cost: 1800, duration: 60, visitsCount: 1, longevity: ['3–4 months', '3–4 חודשים'], img: genTreatmentImg(205), products: [{ productId: 2, amount: 50, unit: 'units' }, { productId: 7, amount: 1, unit: 'n' }], alerts: [['Not for patients on blood thinners', 'לא למטופלים הנוטלים מדללי דם']], notes: [[' ', ' ']] },
+  { id: 3, name: ['Forehead Botox', 'בוטוקס מצח'], cost: 900, duration: 30, visitsCount: 1, longevity: ['3–4 months', '3–4 חודשים'], img: genTreatmentImg(180), products: [{ productId: 4, amount: 30, unit: 'units' }], alerts: [], notes: [[' ', ' ']] },
+  { id: 4, name: ['Cheek Filler', 'מילוי לחיים'], cost: 1500, duration: 45, visitsCount: 1, longevity: ['9–12 months', '9–12 חודשים'], img: genTreatmentImg(285), products: [{ productId: 1, amount: 2, unit: 'ml' }], alerts: [], notes: [[' ', ' ']] },
+  { id: 5, name: ['Permanent Makeup — Lips', 'איפור קבוע — שפתיים'], cost: 1400, duration: 90, visitsCount: 2, longevity: ['1–2 years', '1–2 שנים'], img: genTreatmentImg(345), products: [{ productId: 5, amount: 3, unit: 'cc' }, { productId: 7, amount: 2, unit: 'n' }], alerts: [['Patch test required 48h before', 'נדרש תבחין רגישות 48 שעות מראש']], notes: [[' ', ' ']] },
+  { id: 6, name: ['Permanent Makeup — Eyebrows', 'איפור קבוע — גבות'], cost: 1100, duration: 75, visitsCount: 2, longevity: ['1–2 years', '1–2 שנים'], img: genTreatmentImg(35), products: [{ productId: 5, amount: 2, unit: 'cc' }, { productId: 7, amount: 1, unit: 'n' }], alerts: [], notes: [[' ', ' ']] },
+  { id: 7, name: ['Jawline Contour', 'עיצוב קו לסת'], cost: 2200, duration: 60, visitsCount: 1, longevity: ['9–12 months', '9–12 חודשים'], img: genTreatmentImg(255), products: [{ productId: 1, amount: 4, unit: 'ml' }], alerts: [], notes: [['Premium treatment — offer payment plan', 'טיפול פרימיום — להציע פריסת תשלומים']] },
+  { id: 8, name: ['Skin Booster', 'סקין בוסטר'], cost: 950, duration: 40, visitsCount: 3, longevity: ['4–6 months', '4–6 חודשים'], img: genTreatmentImg(95), products: [{ productId: 6, amount: 2, unit: 'ml' }], alerts: [], notes: [[' ', ' ']] },
 ];
 
 export const PRODUCTS = [
-  { id: 1, name: ['Juvederm Ultra XC', 'ג\'ובידרם אולטרה XC'], company: ['Allergan', 'אלרגן'], commonUse: ['Lip & cheek filler', 'מילוי שפתיים ולחיים'], packaging: ['2 × 1ml syringes', '2 מזרקים × 1 מ"ל'], notes: ['Keep refrigerated', 'לשמור בקירור'], img: genProductBox(275) },
-  { id: 2, name: ['Botox 100U', 'בוטוקס 100 יחידות'], company: ['Allergan', 'אלרגן'], commonUse: ['Wrinkle relaxation', 'הרפיית קמטים'], packaging: ['100U vial', 'בקבוקון 100 יח\''], notes: ['Reconstitute before use', 'להמסה לפני שימוש'], img: genProductBox(200) },
-  { id: 3, name: ['Restylane Kysse', 'רסטילן קיס'], company: ['Galderma', 'גלדרמה'], commonUse: ['Lip augmentation', 'העשרת שפתיים'], packaging: ['1 × 1ml syringe', 'מזרק 1 מ"ל'], notes: [' ', ' '], img: genProductBox(340) },
-  { id: 4, name: ['Dysport 300U', 'דיספורט 300 יחידות'], company: ['Ipsen', 'איפסן'], commonUse: ['Forehead lines', 'קמטי מצח'], packaging: ['300U vial', 'בקבוקון 300 יח\''], notes: ['Order 2 weeks ahead', 'להזמין שבועיים מראש'], img: genProductBox(150) },
-  { id: 5, name: ['PMU Pigment Set', 'סט פיגמנטים לאיפור קבוע'], company: ['Perma Blend', 'פרמה בלנד'], commonUse: ['Permanent makeup', 'איפור קבוע'], packaging: ['6 × 15ml bottles', '6 בקבוקים × 15 מ"ל'], notes: [' ', ' '], img: genProductBox(25) },
-  { id: 6, name: ['Profhilo', 'פרופהילו'], company: ['IBSA', 'איבסה'], commonUse: ['Skin boosting', 'חיזוק עור'], packaging: ['1 × 2ml syringe', 'מזרק 2 מ"ל'], notes: ['High demand', 'ביקוש גבוה'], img: genProductBox(90) },
-  { id: 7, name: ['Numbing Cream', 'משחת הרדמה'], company: ['TKTX', 'TKTX'], commonUse: ['Topical anesthesia', 'הרדמה מקומית'], packaging: ['10g tube', 'שפופרת 10 גרם'], notes: [' ', ' '], img: genProductBox(120, true) },
+  { id: 1, name: ['Juvederm Ultra XC', 'ג\'ובידרם אולטרה XC'], company: ['Allergan', 'אלרגן'], commonUse: ['Lip & cheek filler', 'מילוי שפתיים ולחיים'], packaging: ['2 × 1ml syringes', '2 מזרקים × 1 מ"ל'], notes: ['Keep refrigerated', 'לשמור בקירור'], alerts: [['Contains lidocaine', 'מכיל לידוקאין']], img: genProductBox(275) },
+  { id: 2, name: ['Botox 100U', 'בוטוקס 100 יחידות'], company: ['Allergan', 'אלרגן'], commonUse: ['Wrinkle relaxation', 'הרפיית קמטים'], packaging: ['100U vial', 'בקבוקון 100 יח\''], notes: ['Reconstitute before use', 'להמסה לפני שימוש'], alerts: [['Cold chain — 2-8°C', 'שרשרת קור — 2-8°C']], img: genProductBox(200) },
+  { id: 3, name: ['Restylane Kysse', 'רסטילן קיס'], company: ['Galderma', 'גלדרמה'], commonUse: ['Lip augmentation', 'העשרת שפתיים'], packaging: ['1 × 1ml syringe', 'מזרק 1 מ"ל'], notes: [' ', ' '], alerts: [], img: genProductBox(340) },
+  { id: 4, name: ['Dysport 300U', 'דיספורט 300 יחידות'], company: ['Ipsen', 'איפסן'], commonUse: ['Forehead lines', 'קמטי מצח'], packaging: ['300U vial', 'בקבוקון 300 יח\''], notes: ['Order 2 weeks ahead', 'להזמין שבועיים מראש'], alerts: [], img: genProductBox(150) },
+  { id: 5, name: ['PMU Pigment Set', 'סט פיגמנטים לאיפור קבוע'], company: ['Perma Blend', 'פרמה בלנד'], commonUse: ['Permanent makeup', 'איפור קבוע'], packaging: ['6 × 15ml bottles', '6 בקבוקים × 15 מ"ל'], notes: [' ', ' '], alerts: [['Patch test required', 'נדרש תבחין רגישות']], img: genProductBox(25) },
+  { id: 6, name: ['Profhilo', 'פרופהילו'], company: ['IBSA', 'איבסה'], commonUse: ['Skin boosting', 'חיזוק עור'], packaging: ['1 × 2ml syringe', 'מזרק 2 מ"ל'], notes: ['High demand', 'ביקוש גבוה'], alerts: [], img: genProductBox(90) },
+  { id: 7, name: ['Numbing Cream', 'משחת הרדמה'], company: ['TKTX', 'TKTX'], commonUse: ['Topical anesthesia', 'הרדמה מקומית'], packaging: ['10g tube', 'שפופרת 10 גרם'], notes: [' ', ' '], alerts: [], img: genProductBox(120, true) },
 ];
 
-// procedure -> default products used
-export const PROC_PRODS = { 1: [1, 7], 2: [2, 7], 3: [4], 4: [1], 5: [5, 7], 6: [5, 7], 7: [1], 8: [6] };
+export const UNITS = ['ml', 'cc', 'units', 'n'];
 
 const T = today();
 const bg = (n) => addDays(T, -n); // n days ago
@@ -165,8 +191,12 @@ export const TREATMENTS = [
   { id: 22, procId: 1, userId: 1, visitId: 21, cost: 1200 },
 ];
 
-// products used per treatment
-export const TREAT_PRODS = TREATMENTS.map((tr) => (PROC_PRODS[tr.procId] || []).map((p, i) => ({ treatmentId: tr.id, productId: p, amount: i === 0 ? ['1 syringe', 'מזרק 1'] : ['1 unit', 'יחידה 1'] }))).flat();
+// products used per treatment — seeded from each procedure's default product set
+let _tpId = 0;
+export const TREAT_PRODS = TREATMENTS.flatMap((tr) => {
+  const proc = PROCEDURES.find((p) => p.id === tr.procId);
+  return (proc?.products || []).map((pp) => ({ id: ++_tpId, treatmentId: tr.id, productId: pp.productId, amount: pp.amount, unit: pp.unit }));
+});
 
 // payments — spread across months so finance stats & chart have life
 export const PAYMENTS = [
@@ -215,14 +245,16 @@ export const ORDERS = [
   { id: 4, productId: 5, date: ymd(bg(100)), seller: ['PMU Store', 'חנות PMU'], batch: 3, cost: 2700, notes: [' ', ' '] },
 ];
 
+// Form blocks: `alert: true` on a toggle question means answering YES raises a
+// medical alert on the signing patient; on an option it means choosing it does.
 export const FORMS = [
   {
     id: 1, name: ['Botox Informed Consent', 'הסכמה מדעת — בוטוקס'], created: ymd(bg(200)),
     blocks: [
       { id: 1, type: 'rich', html: ['<b>Botox Injection — Informed Consent.</b><br/>I understand the nature of the treatment, its expected results and possible side effects, including temporary bruising, swelling and asymmetry.', '<b>הזרקת בוטוקס — הסכמה מדעת.</b><br/>אני מבין/ה את מהות הטיפול, תוצאותיו הצפויות ותופעות הלוואי האפשריות, כולל שטפי דם זמניים, נפיחות וא-סימטריה.'] },
-      { id: 2, type: 'toggle', q: ['Have you received Botox in the past 3 months?', 'האם קיבלת בוטוקס ב-3 החודשים האחרונים?'] },
-      { id: 3, type: 'toggle', q: ['Are you pregnant or breastfeeding?', 'האם את בהריון או מניקה?'] },
-      { id: 4, type: 'options', q: ['How did you hear about us?', 'איך שמעת עלינו?'], options: [['Instagram', 'אינסטגרם'], ['A friend', 'חבר/ה'], ['Google', 'גוגל']] },
+      { id: 2, type: 'toggle', q: ['Have you received Botox in the past 3 months?', 'האם קיבלת בוטוקס ב-3 החודשים האחרונים?'], alert: false },
+      { id: 3, type: 'toggle', q: ['Are you pregnant or breastfeeding?', 'האם את בהריון או מניקה?'], alert: true },
+      { id: 4, type: 'options', q: ['How did you hear about us?', 'איך שמעת עלינו?'], options: [{ text: ['Instagram', 'אינסטגרם'], alert: false }, { text: ['A friend', 'חבר/ה'], alert: false }, { text: ['Google', 'גוגל'], alert: false }] },
       { id: 5, type: 'signature' },
     ],
   },
@@ -230,11 +262,21 @@ export const FORMS = [
     id: 2, name: ['Health Declaration', 'הצהרת בריאות'], created: ymd(bg(180)),
     blocks: [
       { id: 1, type: 'rich', html: ['<b>Health Declaration.</b><br/>I hereby declare that the details I provided about my medical condition are complete and truthful.', '<b>הצהרת בריאות.</b><br/>אני מצהיר/ה בזאת כי הפרטים שמסרתי על מצבי הרפואי מלאים ונכונים.'] },
-      { id: 2, type: 'toggle', q: ['Do you suffer from any chronic illness?', 'האם את/ה סובל/ת ממחלה כרונית?'] },
-      { id: 3, type: 'toggle', q: ['Are you taking blood thinners?', 'האם את/ה נוטל/ת מדללי דם?'] },
-      { id: 4, type: 'signature' },
+      { id: 2, type: 'toggle', q: ['Do you suffer from any chronic illness?', 'האם את/ה סובל/ת ממחלה כרונית?'], alert: true },
+      { id: 3, type: 'toggle', q: ['Are you taking blood thinners?', 'האם את/ה נוטל/ת מדללי דם?'], alert: true },
+      { id: 4, type: 'options', q: ['Known allergies', 'אלרגיות ידועות'], options: [{ text: ['Lidocaine', 'לידוקאין'], alert: true }, { text: ['Latex', 'לטקס'], alert: true }, { text: ['None', 'ללא'], alert: false }] },
+      { id: 5, type: 'signature' },
     ],
   },
+];
+
+// Admin-defined alert / notification rules
+export const ALERT_RULES = [
+  { id: 1, kind: 'medical', text: ['Diabetes mellitus', 'סוכרת'], productId: null, threshold: null, active: true, fromForms: true },
+  { id: 2, kind: 'medical', text: ['Pregnancy — no injections', 'הריון — ללא הזרקות'], productId: null, threshold: null, active: true, fromForms: true },
+  { id: 3, kind: 'inventory', text: [' ', ' '], productId: 4, threshold: 3, active: true, fromForms: false },
+  { id: 4, kind: 'inventory', text: [' ', ' '], productId: 2, threshold: 5, active: true, fromForms: false },
+  { id: 5, kind: 'custom', text: ['Unpleasant patient — handle with care', 'מטופל/ת לא נעים/ה — לטפל בזהירות'], productId: null, threshold: null, active: false, fromForms: false },
 ];
 
 export const MESSAGES = [

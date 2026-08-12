@@ -12,6 +12,7 @@ function ProductEditPopup({ close, product, count }) {
     name: product ? L(product.name) : '', company: product ? L(product.company) : '',
     commonUse: product ? L(product.commonUse) : '', packaging: product ? L(product.packaging) : '',
     notes: product ? L(product.notes) : '', count: count ?? 0,
+    alerts: product ? (product.alerts || []).map((a) => L(a)).join('\n') : '',
   });
   const [img, setImg] = useState(product?.img || genProductBox(Math.floor(Math.random() * 360)));
   const fileRef = useRef(null);
@@ -21,6 +22,7 @@ function ProductEditPopup({ close, product, count }) {
     const patch = {
       name: [f.name, f.name], company: [f.company, f.company], commonUse: [f.commonUse, f.commonUse],
       packaging: [f.packaging, f.packaging], notes: [f.notes, f.notes], img,
+      alerts: f.alerts.split('\n').filter((s) => s.trim()).map((s) => [s, s]),
     };
     if (isNew) addProduct(patch, parseInt(f.count, 10) || 0);
     else updateProduct(product.id, patch, parseInt(f.count, 10) || 0);
@@ -49,6 +51,7 @@ function ProductEditPopup({ close, product, count }) {
         <label>{t('common.notes')}<input value={f.notes} onChange={set('notes')} style={{ width: '100%' }} /></label>
         <label>{t('inv.count')}<input type="number" value={f.count} onChange={set('count')} style={{ width: '100%' }} /></label>
       </div>
+      <label>{t('common.alerts')}<textarea rows={2} value={f.alerts} onChange={set('alerts')} style={{ width: '100%' }} /></label>
       <button className="btn" onClick={save}><Icon name="check" size={15} />{t('common.save')}</button>
     </Modal>
   );
@@ -56,7 +59,7 @@ function ProductEditPopup({ close, product, count }) {
 
 export default function Inventory() {
   const { t, L } = useLang();
-  const { products, inventory, removeProduct } = useStore();
+  const { products, inventory, removeProduct, trippedInventoryAlerts } = useStore();
   const [edit, setEdit] = useState(null); // {product, count} | 'new'
   const [confirmDel, setConfirmDel] = useState(null);
 
@@ -74,6 +77,20 @@ export default function Inventory() {
       render: (p) => {
         const c = countOf(p.id);
         return <span className={`tag ${c <= 2 ? 'alert' : 'paid'}`}>{c}{c <= 2 ? ` · ${t('inv.low')}` : ''}</span>;
+      },
+    },
+    {
+      key: 'alerts', label: t('common.alerts'),
+      render: (p) => {
+        const rule = trippedInventoryAlerts.find((r) => r.productId === p.id);
+        const own = (p.alerts || []).map((a) => L(a)).filter((s) => s.trim());
+        if (!rule && own.length === 0) return <span className="muted">—</span>;
+        return (
+          <span style={{ display: 'inline-flex', flexDirection: 'column', gap: '.25em' }}>
+            {rule && <span className="tag alert"><Icon name="alert" size={12} />{t('an.invRule', { product: L(p.name), n: rule.threshold })}</span>}
+            {own.map((a, i) => <span key={i} className="tag pending"><Icon name="alert" size={12} />{a}</span>)}
+          </span>
+        );
       },
     },
     {

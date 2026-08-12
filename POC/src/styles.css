@@ -201,15 +201,27 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .92em; }
 .sched-gap::before, .sched-gap::after { content: ''; flex: 1; border-top: 2px dashed var(--line); }
 .sched-hour { position: absolute; inset-inline-start: 0; width: 3.2em; text-align: center; font-size: .75em; color: var(--ink-soft); border-top: 1px solid var(--line); }
 .sched-canvas { position: relative; margin-inline-start: 3.6em; border-inline-start: var(--bw) solid var(--line); }
-.appt { position: absolute; inset-inline: .4em; border-radius: var(--radius-sm); border: var(--bw) solid var(--line);
+/* height comes from --h so :hover can override it (an inline height could not) */
+.appt { position: absolute; inset-inline: .4em; height: var(--h); border-radius: var(--radius-sm); border: var(--bw) solid var(--line);
   background: color-mix(in srgb, var(--card) 92%, transparent); box-shadow: var(--shadow); cursor: grab; overflow: hidden;
   display: flex; flex-direction: column; padding: .45em .7em; transition: box-shadow .15s; }
-.appt:hover { box-shadow: var(--shadow), var(--glow); z-index: 3; }
+/* short blocks clip their content — on hover expand to full height above neighbours */
+.appt:hover { box-shadow: var(--shadow), var(--glow); z-index: 6; height: auto; min-height: var(--h); overflow: visible;
+  background: color-mix(in srgb, var(--card) 99%, transparent); }
+.appt.simple { position: static; height: auto; inset-inline: auto; cursor: pointer; margin-bottom: .5em; }
+.appt.simple:hover { min-height: 0; }
+.simple-list { display: flex; flex-direction: column; }
 .appt.dragging { opacity: .75; z-index: 10; cursor: grabbing; }
 .appt.st-active { background: color-mix(in srgb, #3bb273 16%, var(--card)); border-color: color-mix(in srgb, #3bb273 55%, transparent); }
-.appt.st-missed { background: color-mix(in srgb, #e0a43b 18%, var(--card)); border-color: color-mix(in srgb, #e0a43b 55%, transparent); }
-.appt.st-late { background: color-mix(in srgb, #e05b5b 20%, var(--card)); border-color: color-mix(in srgb, #e05b5b 60%, transparent); }
-.appt-grid { display: grid; grid-template-columns: 3.4em 2.6em minmax(8em, 1.2fr) minmax(6em, 1fr) 5.5em minmax(7em, 1fr) 6.5em 2em; gap: .6em; align-items: center; font-size: .84em; }
+.appt.st-delayed { background: color-mix(in srgb, #e0a43b 18%, var(--card)); border-color: color-mix(in srgb, #e0a43b 55%, transparent); }
+.appt.st-missed { background: color-mix(in srgb, #e05b5b 20%, var(--card)); border-color: color-mix(in srgb, #e05b5b 60%, transparent); }
+/* one shared column template for every block so nothing misaligns between rows */
+.appt-grid { display: grid; gap: .6em; align-items: center; font-size: .84em; }
+.appt-note { font-size: .78em; color: var(--ink-soft); display: flex; gap: .4em; align-items: center; margin-top: .25em; }
+.plan-row { display: flex; align-items: center; gap: .5em; flex-wrap: wrap; padding: .5em 0; border-bottom: 1px dashed var(--line); }
+.plan-prods { display: flex; flex-wrap: wrap; gap: .4em; padding-inline-start: 1.4em; }
+.plan-prod { display: inline-flex; align-items: center; gap: .35em; padding: .2em .55em; border-radius: 2em; font-size: .8em;
+  background: color-mix(in srgb, var(--c1) 35%, transparent); border: var(--bw) solid var(--line); }
 .appt-alert { font-size: .78em; color: #f5a3a3; display: flex; gap: .4em; align-items: center; margin-top: .25em; }
 
 /* ---------- user header template ---------- */
@@ -233,14 +245,21 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .92em; }
 .vb-photos img { width: 6.4em; height: 7.6em; object-fit: cover; border-radius: var(--radius-sm); border: var(--bw) solid var(--line); }
 .vb-arrow { align-self: center; font-size: 2em; color: var(--c2); text-shadow: var(--glow); }
 
-/* ---------- treatment compare ---------- */
+/* ---------- treatment compare (T. comparison view template) ---------- */
 .cmp { display: grid; grid-template-columns: 6.4em 1fr 6.4em; gap: .8em; min-height: 24em; }
-.cmp-thumbs { display: flex; flex-direction: column; gap: .5em; overflow-y: auto; max-height: 30em; }
+.cmp.compact { min-height: 18em; }
+.cmp.fullscreen { height: 100%; grid-template-columns: 7.5em 1fr 7.5em; }
+.cmp-thumbs { display: flex; flex-direction: column; gap: .5em; overflow-y: auto; max-height: 34em; }
+.cmp.fullscreen .cmp-thumbs { max-height: none; }
 .cmp-thumbs img { width: 100%; border-radius: var(--radius-sm); border: 2px solid transparent; cursor: pointer; }
 .cmp-thumbs img.sel { border-color: var(--c2); box-shadow: var(--glow); }
-.cmp-view { display: grid; gap: .6em; }
-.cmp-view.side { grid-template-columns: 1fr 1fr; } .cmp-view.stack { grid-template-rows: 1fr 1fr; }
-.cmp-cell { position: relative; border-radius: var(--radius); border: var(--bw) solid var(--line); overflow: hidden; background: color-mix(in srgb, #000 25%, var(--card)); min-height: 11em; display: flex; align-items: center; justify-content: center; }
+/* gap:0 — spec requires no spaces between the images in the comparison area */
+.cmp-view { display: grid; gap: 0; border-radius: var(--radius); overflow: hidden; border: var(--bw) solid var(--line); }
+.cmp-view.side { grid-template-columns: 1fr 1fr; }
+.cmp-view.stack { grid-template-rows: 1fr 1fr; }
+.cmp-view.overlay { grid-template-columns: 1fr; }
+.cmp-cell { position: relative; overflow: hidden; background: color-mix(in srgb, #000 25%, var(--card)); min-height: 11em; display: flex; align-items: center; justify-content: center; }
+.cmp.fullscreen .cmp-view, .cmp.fullscreen .cmp-cell { height: 100%; }
 .cmp-cell img { position: absolute; user-select: none; -webkit-user-drag: none; cursor: grab; }
 .cmp-label { position: absolute; top: .5em; inset-inline-start: .6em; z-index: 2; }
 

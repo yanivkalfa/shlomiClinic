@@ -13,14 +13,17 @@ import VisitPage from './pages/VisitPage.jsx';
 import TreatmentInfo from './pages/TreatmentInfo.jsx';
 import Finances from './pages/Finances.jsx';
 import Inventory from './pages/Inventory.jsx';
+import Treatments from './pages/Treatments.jsx';
 import Orders from './pages/Orders.jsx';
 import LegalForms from './pages/LegalForms.jsx';
+import AlertsNotifications from './pages/AlertsNotifications.jsx';
 import Settings from './pages/Settings.jsx';
 
 const PAGES = {
   home: Home, appointments: CalendarPage, messaging: Messaging, users: UsersManagement,
   user: UserPage, visit: VisitPage, treatment: TreatmentInfo,
-  finances: Finances, inventory: Inventory, orders: Orders, legal: LegalForms, settings: Settings,
+  finances: Finances, inventory: Inventory, treatments: Treatments, orders: Orders,
+  legal: LegalForms, alerts: AlertsNotifications, settings: Settings,
 };
 
 const POPUPS = {
@@ -39,6 +42,7 @@ const isDarkColor = (hex) => {
 function ThemeSync() {
   const { lang, isRTL, t } = useLang();
   const { settings } = useStore();
+  const clinicName = settings.clinicName.trim();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -57,8 +61,8 @@ function ThemeSync() {
   useEffect(() => {
     document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
-    document.title = t('app.name');
-  }, [lang, isRTL, t]);
+    document.title = clinicName || t('app.name');
+  }, [lang, isRTL, t, clinicName]);
 
   return null;
 }

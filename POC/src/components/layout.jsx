@@ -7,10 +7,17 @@ import { ymd, today, sameDay } from '../data.js';
 
 export function TopBar() {
   const { t, lang, setLang } = useLang();
-  const { setSession } = useStore();
+  const { setSession, settings } = useStore();
+  // A custom clinic name wins; an empty one falls back to the translated default.
+  const name = settings.clinicName.trim() || t('app.name');
   return (
     <div className="topbar">
-      <div className="brand"><span className="logo">S</span>{t('app.name')}</div>
+      <div className="brand">
+        {settings.clinicLogo
+          ? <img className="logo" src={settings.clinicLogo} alt={name} style={{ objectFit: 'cover' }} />
+          : <span className="logo">S</span>}
+        {name}
+      </div>
       <span className="muted" style={{ flex: 1 }}>{t('app.tagline')}</span>
       <div className="langswitch">
         <button className={lang === 'en' ? 'on' : ''} onClick={() => setLang('en')}>{t('lang.en')}</button>
@@ -29,8 +36,10 @@ const NAV = [
   ['users', 'users', 'menu.users'],
   ['finances', 'coins', 'menu.finances'],
   ['inventory', 'box', 'menu.inventory'],
+  ['treatments', 'bolt', 'menu.treatments'],
   ['orders', 'truck', 'menu.orders'],
   ['legal', 'legal', 'menu.legal'],
+  ['alerts', 'bell', 'menu.alerts'],
   ['settings', 'gear', 'menu.settings'],
 ];
 
@@ -97,8 +106,9 @@ function MiniCalendar() {
 
 export function RightPanel() {
   const { t, L, fmtMoney } = useLang();
-  const { openPopup, navigate, messages, notes, todayVisits, treatmentsOfVisit, procById, payments, visits, treatments, userPendingSum, users } = useStore();
+  const { openPopup, navigate, messages, notes, todayVisits, treatmentsOfVisit, procById, payments, visits, userPendingSum, users, settings } = useStore();
   const [collapsed, setCollapsed] = useState(false);
+  const rp = settings.rp;
 
   const unread = messages.filter((m) => !m.read).length;
 
@@ -116,13 +126,18 @@ export function RightPanel() {
     return [...map.entries()].map(([pid, count]) => ({ proc: procById(pid), count }));
   }, [todayVisits, treatmentsOfVisit, procById]);
 
+  // every block can be switched off in App settings — with none left, drop the panel
+  if (!rp.quick && !rp.calendar && !rp.pulse && !rp.today) return null;
+
   if (collapsed) {
     return (
       <div className="card rightpanel collapsed">
         <button className="iconbtn" onClick={() => setCollapsed(false)}><Icon name="chevL" size={14} title={t('right.expand')} /></button>
-        <button className="iconbtn" onClick={() => navigate('messaging')}><Icon name="bell" size={15} title={t('right.alertsIcon')} />{unread > 0 && <span className="badge">{unread}</span>}</button>
-        <button className="iconbtn" onClick={() => openPopup('note', {})}><Icon name="note" size={15} title={t('right.notesIcon')} /></button>
-        <button className="iconbtn" onClick={() => openPopup('quickPay', {})}><Icon name="bolt" size={15} title={t('right.quickPayIcon')} /></button>
+        {rp.quick && <>
+          <button className="iconbtn" onClick={() => navigate('messaging')}><Icon name="bell" size={15} title={t('right.alertsIcon')} />{unread > 0 && <span className="badge">{unread}</span>}</button>
+          <button className="iconbtn" onClick={() => openPopup('note', {})}><Icon name="note" size={15} title={t('right.notesIcon')} /></button>
+          <button className="iconbtn" onClick={() => openPopup('quickPay', {})}><Icon name="bolt" size={15} title={t('right.quickPayIcon')} /></button>
+        </>}
       </div>
     );
   }
@@ -131,37 +146,43 @@ export function RightPanel() {
     <div className="card rightpanel">
       <div className="spread">
         <div className="row">
-          <button className="iconbtn" onClick={() => navigate('messaging')}><Icon name="bell" size={15} title={t('right.alertsIcon')} />{unread > 0 && <span className="badge">{unread}</span>}</button>
-          <button className="iconbtn" onClick={() => openPopup('note', {})}><Icon name="note" size={15} title={t('right.notesIcon')} /></button>
-          <button className="iconbtn" onClick={() => openPopup('quickPay', {})}><Icon name="bolt" size={15} title={t('right.quickPayIcon')} /></button>
+          {rp.quick && <>
+            <button className="iconbtn" onClick={() => navigate('messaging')}><Icon name="bell" size={15} title={t('right.alertsIcon')} />{unread > 0 && <span className="badge">{unread}</span>}</button>
+            <button className="iconbtn" onClick={() => openPopup('note', {})}><Icon name="note" size={15} title={t('right.notesIcon')} /></button>
+            <button className="iconbtn" onClick={() => openPopup('quickPay', {})}><Icon name="bolt" size={15} title={t('right.quickPayIcon')} /></button>
+          </>}
         </div>
         <button className="iconbtn" onClick={() => setCollapsed(true)}><Icon name="chevR" size={14} title={t('right.collapse')} /></button>
       </div>
 
-      <MiniCalendar />
+      {rp.calendar && <MiniCalendar />}
 
-      <div className="rp-block card">
-        <h3 className="row"><Icon name="bolt" size={15} />{t('right.pulse')}</h3>
-        <div className="pulse-line"><span>{t('right.todayRevenue')}</span><b>{fmtMoney(todayRevenue)}</b></div>
-        <div className="pulse-line"><span>{t('right.pendingPayments')}</span><b>{fmtMoney(pendingTotal)}</b></div>
-        <div className="pulse-line"><span>{t('right.patientsWeek')}</span><b>{patientsWeek}</b></div>
-        <div>
-          <div className="muted" style={{ margin: '.35em 0' }}>{t('right.adminNotes')}</div>
-          {notes.slice(0, 3).map((n) => (
-            <div key={n.id} className="row" style={{ fontSize: '.85em', padding: '.15em 0' }}>
-              <Icon name="note" size={12} /><span>{L(n.text)}</span>
-            </div>
-          ))}
+      {rp.pulse && (
+        <div className="rp-block card">
+          <h3 className="row"><Icon name="bolt" size={15} />{t('right.pulse')}</h3>
+          <div className="pulse-line"><span>{t('right.todayRevenue')}</span><b>{fmtMoney(todayRevenue)}</b></div>
+          <div className="pulse-line"><span>{t('right.pendingPayments')}</span><b>{fmtMoney(pendingTotal)}</b></div>
+          <div className="pulse-line"><span>{t('right.patientsWeek')}</span><b>{patientsWeek}</b></div>
+          <div>
+            <div className="muted" style={{ margin: '.35em 0' }}>{t('right.adminNotes')}</div>
+            {notes.slice(0, 3).map((n) => (
+              <div key={n.id} className="row" style={{ fontSize: '.85em', padding: '.15em 0' }}>
+                <Icon name="note" size={12} /><span>{L(n.text)}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="rp-block card">
-        <h3 className="row"><Icon name="clock" size={15} />{t('right.todayTreatments')}</h3>
-        {todayProcCounts.length === 0 ? <span className="muted">{t('right.noTreatments')}</span>
-          : todayProcCounts.map(({ proc, count }) => (
-            <div key={proc.id} className="pulse-line"><span>{L(proc.name)}</span><b>{count}</b></div>
-          ))}
-      </div>
+      {rp.today && (
+        <div className="rp-block card">
+          <h3 className="row"><Icon name="clock" size={15} />{t('right.todayTreatments')}</h3>
+          {todayProcCounts.length === 0 ? <span className="muted">{t('right.noTreatments')}</span>
+            : todayProcCounts.map(({ proc, count }) => (
+              <div key={proc.id} className="pulse-line"><span>{L(proc.name)}</span><b>{count}</b></div>
+            ))}
+        </div>
+      )}
     </div>
   );
 }

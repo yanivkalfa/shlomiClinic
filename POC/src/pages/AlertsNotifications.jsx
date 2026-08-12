@@ -1,0 +1,144 @@
+import React, { useState } from 'react';
+import { useLang } from '../i18n.jsx';
+import { useStore } from '../store.jsx';
+import { Icon, DataTable, Modal, ModalHead, Toggle } from '../components/common.jsx';
+
+const KINDS = ['medical', 'inventory', 'custom'];
+const KIND_ICON = { medical: 'alert', inventory: 'box', custom: 'bell' };
+
+function AlertEditPopup({ close, rule }) {
+  const { t, L } = useLang();
+  const { products, addAlertRule, updateAlertRule, showToast } = useStore();
+  const isNew = !rule;
+  const [kind, setKind] = useState(rule?.kind || 'medical');
+  const [text, setText] = useState(rule ? L(rule.text).trim() : '');
+  const [productId, setProductId] = useState(rule?.productId ?? products[0]?.id ?? '');
+  const [threshold, setThreshold] = useState(rule?.threshold ?? 3);
+  const [err, setErr] = useState(null);
+
+  const save = () => {
+    if (kind !== 'inventory' && !text.trim()) { setErr(t('an.text')); return; }
+    const patch = {
+      kind,
+      text: kind === 'inventory' ? [' ', ' '] : [text, text],
+      productId: kind === 'inventory' ? Number(productId) : null,
+      threshold: kind === 'inventory' ? parseInt(threshold, 10) || 0 : null,
+      active: rule?.active ?? true,
+      fromForms: rule?.fromForms ?? false,
+    };
+    if (isNew) addAlertRule(patch); else updateAlertRule(rule.id, patch);
+    showToast(t('common.save'));
+    close();
+  };
+
+  return (
+    <Modal onClose={close} className="narrow">
+      <ModalHead title={isNew ? t('an.add') : t('common.edit')} icon="bell" onClose={close} />
+      <div>
+        <div className="muted" style={{ marginBottom: '.4em' }}>{t('an.kind')}</div>
+        <div className="row" style={{ flexWrap: 'wrap' }}>
+          {KINDS.map((k) => (
+            <span key={k} className={`chip ${kind === k ? 'on' : ''}`} onClick={() => { setKind(k); setErr(null); }}>
+              <Icon name={KIND_ICON[k]} size={13} />{t(`an.${k}`)}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {kind === 'inventory' ? (
+        <>
+          <label>{t('ord.product')}
+            <select value={productId} onChange={(e) => setProductId(Number(e.target.value))} style={{ width: '100%' }}>
+              {products.map((p) => <option key={p.id} value={p.id}>{L(p.name)}</option>)}
+            </select>
+          </label>
+          <label className="row">{t('an.threshold')}
+            <input type="number" min="0" value={threshold} onChange={(e) => setThreshold(e.target.value)} style={{ width: '6em' }} />
+          </label>
+        </>
+      ) : (
+        <label>{t('an.text')}
+          <input value={text} onChange={(e) => { setText(e.target.value); setErr(null); }} style={{ width: '100%' }} />
+        </label>
+      )}
+
+      {err && <div className="err">{err}</div>}
+      <button className="btn" onClick={save}><Icon name="check" size={15} />{t('common.save')}</button>
+    </Modal>
+  );
+}
+
+export default function AlertsNotifications() {
+  const { t, L, fmtNum } = useLang();
+  const { alertRules, productById, countOfProduct, updateAlertRule, removeAlertRule } = useStore();
+  const [edit, setEdit] = useState(null);
+  const [confirmDel, setConfirmDel] = useState(null);
+
+  const describe = (r) => {
+    if (r.kind === 'inventory') {
+      const p = productById(r.productId);
+      return t('an.invRule', { product: p ? L(p.name) : '—', n: fmtNum(r.threshold) });
+    }
+    return L(r.text);
+  };
+  const tripped = (r) => r.kind === 'inventory' && r.active && countOfProduct(r.productId) < r.threshold;
+
+  const cols = [
+    {
+      key: 'kind', label: t('an.kind'), sortVal: (r) => r.kind,
+      render: (r) => <span className="row"><Icon name={KIND_ICON[r.kind]} size={15} />{t(`an.${r.kind}`)}</span>,
+    },
+    {
+      key: 'rule', label: t('an.rule'), sortVal: (r) => r.kind,
+      render: (r) => (
+        <span>
+          <b>{describe(r)}</b>
+          {r.fromForms && <><br /><span className="muted" style={{ fontSize: '.85em' }}>{t('an.fromForms')}</span></>}
+        </span>
+      ),
+    },
+    {
+      key: 'state', label: t('common.status'),
+      render: (r) => (tripped(r)
+        ? <span className="tag alert"><Icon name="alert" size={12} />{fmtNum(countOfProduct(r.productId))}</span>
+        : <span className="muted">—</span>),
+    },
+    {
+      key: 'active', label: t('an.active'),
+      render: (r) => <Toggle on={r.active} onChange={(v) => updateAlertRule(r.id, { active: v })} />,
+    },
+    {
+      key: 'actions', label: t('common.actions'),
+      render: (r) => (
+        <span className="row">
+          <button className="iconbtn" onClick={() => setEdit(r)}><Icon name="edit" size={14} title={t('common.edit')} /></button>
+          <button className="iconbtn" onClick={() => setConfirmDel(r)}><Icon name="trash" size={14} title={t('common.delete')} /></button>
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <div className="page">
+      <div className="spread">
+        <h1 className="row"><Icon name="bell" size={22} />{t('an.title')}</h1>
+        <button className="btn" onClick={() => setEdit('new')}><Icon name="plus" size={15} />{t('an.add')}</button>
+      </div>
+      <div className="card" style={{ padding: '1em' }}>
+        <div className="muted" style={{ marginBottom: '.5em' }}>{t('fb.alertHint')}</div>
+        <DataTable columns={cols} rows={alertRules} pageSize={8} onRowDoubleClick={(r) => setEdit(r)} />
+      </div>
+      {edit && <AlertEditPopup close={() => setEdit(null)} rule={edit === 'new' ? null : edit} />}
+      {confirmDel && (
+        <Modal onClose={() => setConfirmDel(null)} className="narrow">
+          <ModalHead title={t('an.confirmDelete')} icon="trash" onClose={() => setConfirmDel(null)} />
+          <b>{describe(confirmDel)}</b>
+          <div className="row">
+            <button className="btn danger" onClick={() => { removeAlertRule(confirmDel.id); setConfirmDel(null); }}><Icon name="trash" size={14} />{t('common.yes')}</button>
+            <button className="btn ghost" onClick={() => setConfirmDel(null)}>{t('common.no')}</button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}

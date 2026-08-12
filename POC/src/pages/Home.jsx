@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLang } from '../i18n.jsx';
 import { useStore } from '../store.jsx';
 import { Icon, PayStatusTag } from '../components/common.jsx';
-import { GCAL_EVENTS, parseOpenRanges, ymd, today, now } from '../data.js';
+import { GCAL_EVENTS, parseOpenRanges, ymd, today } from '../data.js';
 
 const PX = 1.7;      // pixels per minute
 const GAP_H = 34;    // collapsed "closed" divider height
@@ -70,13 +70,63 @@ function Welcome() {
   );
 }
 
-// ---- day schedule (google-calendar-like, working hours from the "Clinic Open" event) ----
-function DaySchedule() {
+// One appointment block. Fields beyond the core four are toggled in App settings,
+// and every block shares `template` so columns never misalign between rows.
+function ApptBlock({ visit, template, simple, style, onPointerDown, className = '' }) {
   const { t, L, fmtMoney, fmtNum } = useLang();
-  const { todayVisits, treatmentsOfVisit, procById, userById, visitPayStatus, visitPaid, userLastVisit, doneVisitsOfUser, userTotalSpent, updateVisit, navigate, openPopup } = useStore();
+  const { settings, userById, treatmentsOfVisit, procById, visitPayStatus, visitPaid, userLastVisit, doneVisitsOfUser, userTotalSpent } = useStore();
+  const f = settings.apptFields;
+  const user = userById(visit.userId);
+  if (!user) return null;
+
+  const trs = treatmentsOfVisit(visit.id);
+  const procNames = trs.map((tr) => L(procById(tr.procId)?.name)).filter(Boolean).join(', ');
+  const last = userLastVisit(user.id);
+  const lastTrs = last ? treatmentsOfVisit(last.id).map((tr) => L(procById(tr.procId)?.name)).filter(Boolean).join(', ') : null;
+  const fmtMin = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`;
+
+  return (
+    <div className={`appt ${simple ? 'simple' : ''} ${className}`} style={style} onPointerDown={onPointerDown}>
+      <div className="appt-grid" style={{ gridTemplateColumns: template }}>
+        <b>{fmtMin(visit.start)}</b>
+        <img className="avatar" src={user.photo} width={34} height={34} alt="" />
+        <span><b>{L(user.first)} {L(user.last)}</b><br /><span className="muted">{user.phone}</span></span>
+        <span>{procNames}</span>
+        {f.payStatus && <PayStatusTag status={visitPayStatus(visit.id)} sum={visitPaid(visit.id)} fmtMoney={fmtMoney} />}
+        {(f.lastVisit || f.lastTreatments) && (
+          <span className="muted">
+            {last ? (
+              <>
+                {f.lastVisit && <>{t('home.lastVisit')}: {last.date}</>}
+                {f.lastVisit && f.lastTreatments && <br />}
+                {f.lastTreatments && lastTrs}
+              </>
+            ) : t('home.firstVisit')}
+          </span>
+        )}
+        {f.visitsSpend && (
+          <span className="muted">
+            {t('home.visitsCount', { n: fmtNum(doneVisitsOfUser(user.id).length) })}<br />
+            {t('home.spentSum', { sum: fmtMoney(userTotalSpent(user.id)) })}
+          </span>
+        )}
+      </div>
+      {f.notes && user.notes.length > 0 && (
+        <div className="appt-note"><Icon name="note" size={13} />{user.notes.map((n) => L(n)).join(' · ')}</div>
+      )}
+      {f.alerts && user.alerts.length > 0 && (
+        <div className="appt-alert"><Icon name="alert" size={13} />{user.alerts.map((a) => L(a)).join(' · ')}</div>
+      )}
+    </div>
+  );
+}
+
+function TodayAppointments() {
+  const { t } = useLang();
+  const { settings, setSettings, todayVisits, updateVisit, navigate } = useStore();
   const clock = useClock();
   const [drag, setDrag] = useState(null); // {visitId, dy}
-  const canvasRef = useRef(null);
+  const view = settings.homeApptView;
 
   const openEvent = GCAL_EVENTS.find((e) => e.date === ymd(today()) && e.open);
   const ranges = openEvent ? parseOpenRanges(openEvent.title) : [];
@@ -104,11 +154,28 @@ function DaySchedule() {
 
   const nowMin = clock.getHours() * 60 + clock.getMinutes();
 
+  // shared grid template — computed once from the toggles so all blocks align
+  const template = useMemo(() => {
+    const f = settings.apptFields;
+    const cols = ['3.4em', '2.6em', 'minmax(8em, 1.2fr)', 'minmax(6em, 1fr)'];
+    if (f.payStatus) cols.push('6.5em');
+    if (f.lastVisit || f.lastTreatments) cols.push('minmax(7em, 1fr)');
+    if (f.visitsSpend) cols.push('minmax(6.5em, 1fr)');
+    return cols.join(' ');
+  }, [settings.apptFields]);
+
+  const statusClass = (v) => {
+    if (v.status === 'active') return 'st-active';
+    if (v.status !== 'scheduled') return '';
+    if (nowMin > v.end) return 'st-missed';           // never started, time passed
+    if (nowMin >= v.start) return 'st-delayed';       // due now, not started yet
+    return '';
+  };
+
   const startDrag = (e, visit) => {
     e.preventDefault();
     const startY = e.clientY;
-    let moved = 0;
-    const move = (ev) => { moved = ev.clientY - startY; setDrag({ visitId: visit.id, dy: moved }); };
+    const move = (ev) => setDrag({ visitId: visit.id, dy: ev.clientY - startY });
     const up = (ev) => {
       window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
       setDrag(null);
@@ -124,8 +191,45 @@ function DaySchedule() {
 
   const fmtMin = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`;
 
+  const header = (
+    <div className="spread" style={{ marginBottom: '.6em', flexWrap: 'wrap', gap: '.5em' }}>
+      <h2 className="row"><Icon name="clock" size={18} />{t('home.appointments')}</h2>
+      <span className="row" style={{ flexWrap: 'wrap' }}>
+        {openEvent && <span className="muted">{t('home.openHours', { ranges: ranges.map(([a, b]) => `${fmtMin(a)}–${fmtMin(b)}`).join(' · ') })}</span>}
+        <span className="row">
+          <button className={`chip ${view === 'schedule' ? 'on' : ''}`} onClick={() => setSettings((s) => ({ ...s, homeApptView: 'schedule' }))}>
+            <Icon name="calendar" size={13} />{t('home.viewSchedule')}
+          </button>
+          <button className={`chip ${view === 'simple' ? 'on' : ''}`} onClick={() => setSettings((s) => ({ ...s, homeApptView: 'simple' }))}>
+            <Icon name="note" size={13} />{t('home.viewSimple')}
+          </button>
+        </span>
+      </span>
+    </div>
+  );
+
+  if (view === 'simple') {
+    return (
+      <div className="card" style={{ padding: '1em' }}>
+        {header}
+        <div className="simple-list">
+          {todayVisits.length === 0 ? <div className="muted">{t('home.noAppointments')}</div>
+            : todayVisits.map((v) => (
+              <ApptBlock key={v.id} visit={v} template={template} simple className={statusClass(v)}
+                onPointerDown={() => navigate('visit', { visitId: v.id })} />
+            ))}
+        </div>
+      </div>
+    );
+  }
+
   if (!openEvent || segs.length === 0) {
-    return <div className="card" style={{ padding: '1.4em', textAlign: 'center' }} ><Icon name="clock" size={20} /> {t('home.clinicClosed')}</div>;
+    return (
+      <div className="card" style={{ padding: '1em' }}>
+        {header}
+        <div style={{ padding: '1.2em', textAlign: 'center' }} className="row"><Icon name="clock" size={20} />{t('home.clinicClosed')}</div>
+      </div>
+    );
   }
 
   const hourTicks = [];
@@ -134,11 +238,8 @@ function DaySchedule() {
 
   return (
     <div className="card" style={{ padding: '1em' }}>
-      <div className="spread" style={{ marginBottom: '.6em' }}>
-        <h2 className="row"><Icon name="clock" size={18} />{t('home.schedule')}</h2>
-        <span className="muted">{t('home.openHours', { ranges: ranges.map(([a, b]) => `${fmtMin(a)}–${fmtMin(b)}`).join(' · ') })}</span>
-      </div>
-      <div style={{ position: 'relative', height: totalH }} ref={canvasRef}>
+      {header}
+      <div style={{ position: 'relative', height: totalH }}>
         {hourTicks.map((tk, i) => (
           <React.Fragment key={i}>
             <div className="sched-hour" style={{ top: tk.y }}>{tk.label}</div>
@@ -155,32 +256,12 @@ function DaySchedule() {
         )}
         <div style={{ position: 'absolute', inset: 0, marginInlineStart: '3.6em' }}>
           {todayVisits.map((v) => {
-            const user = userById(v.userId);
-            if (!user) return null;
-            const trs = treatmentsOfVisit(v.id);
-            const procNames = trs.map((tr) => L(procById(tr.procId)?.name)).filter(Boolean).join(', ');
-            const last = userLastVisit(user.id);
-            const lastTrs = last ? treatmentsOfVisit(last.id).map((tr) => L(procById(tr.procId)?.name)).join(', ') : null;
-            const st = v.status === 'active' ? 'st-active' : v.status === 'scheduled' && nowMin > v.end ? 'st-late' : v.status === 'scheduled' && nowMin >= v.start ? 'st-missed' : '';
             const dy = drag?.visitId === v.id ? drag.dy : 0;
             return (
-              <div key={v.id} className={`appt ${st} ${drag?.visitId === v.id ? 'dragging' : ''}`}
-                style={{ top: timeToY(v.start), height: (v.end - v.start) * PX, transform: dy ? `translateY(${dy}px)` : undefined }}
-                onPointerDown={(e) => startDrag(e, v)}>
-                <div className="appt-grid">
-                  <b>{fmtMin(v.start)}</b>
-                  <img className="avatar" src={user.photo} width={34} height={34} alt="" />
-                  <span><b>{L(user.first)} {L(user.last)}</b><br /><span className="muted">{user.phone}</span></span>
-                  <span>{procNames}</span>
-                  <PayStatusTag status={visitPayStatus(v.id)} sum={visitPaid(v.id)} fmtMoney={fmtMoney} />
-                  <span className="muted">{last ? <>{t('home.lastVisit')}: {last.date}<br />{lastTrs}</> : t('home.firstVisit')}</span>
-                  <span className="muted">{t('home.visitsCount', { n: fmtNum(doneVisitsOfUser(user.id).length) })}<br />{t('home.spentSum', { sum: fmtMoney(userTotalSpent(user.id)) })}</span>
-                  {user.notes.length > 0 ? <Icon name="note" size={15} title={t('common.notes')} /> : <span />}
-                </div>
-                {user.alerts.length > 0 && (
-                  <div className="appt-alert"><Icon name="alert" size={13} />{user.alerts.map((a) => L(a)).join(' · ')}</div>
-                )}
-              </div>
+              <ApptBlock key={v.id} visit={v} template={template}
+                className={`${statusClass(v)} ${drag?.visitId === v.id ? 'dragging' : ''}`}
+                style={{ top: timeToY(v.start), '--h': `${(v.end - v.start) * PX}px`, transform: dy ? `translateY(${dy}px)` : undefined }}
+                onPointerDown={(e) => startDrag(e, v)} />
             );
           })}
         </div>
@@ -190,11 +271,12 @@ function DaySchedule() {
 }
 
 export default function Home() {
+  const { settings } = useStore();
   return (
     <div className="page">
       <ClockWeather />
-      <Welcome />
-      <DaySchedule />
+      {settings.showWelcome && <Welcome />}
+      <TodayAppointments />
     </div>
   );
 }

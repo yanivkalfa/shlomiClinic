@@ -19,10 +19,12 @@ export function UserQuickInfo({ user }) {
 
 // P. Quick user access — search by name / phone / ID; embeddable anywhere
 export function QuickUserAccess({ onFound, compact = false }) {
-  const { t, L } = useLang();
+  const { t } = useLang();
   const { users, navigate, openPopup } = useStore();
   const [q, setQ] = useState('');
-  const [state, setState] = useState(null); // 'none' | {matches}
+  const [state, setState] = useState(null); // 'none'
+
+  const pick = (u) => { if (onFound) onFound(u); else navigate('user', { userId: u.id }); };
 
   const go = () => {
     const s = q.trim().toLowerCase();
@@ -35,8 +37,6 @@ export function QuickUserAccess({ onFound, compact = false }) {
     else if (matches.length === 1) { setState(null); setQ(''); pick(matches[0]); }
     else { setState(null); openPopup('userPicker', { matches: matches.map((m) => m.id), onPick: pick }); }
   };
-
-  const pick = (u) => { if (onFound) onFound(u); else navigate('user', { userId: u.id }); };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '.4em' }}>
@@ -52,63 +52,94 @@ export function QuickUserAccess({ onFound, compact = false }) {
 
 const SOCIALS = ['instagram', 'facebook', 'tiktok', 'whatsapp'];
 
-// T. User full size header
+// T. User full size header — two columns (photo | details) plus a footer band
 export function UserFullHeader({ user }) {
   const { t, L, fmtDate, fmtMoney, fmtNum } = useLang();
-  const { settings, openPopup, doneVisitsOfUser, userTotalSpent, userLastVisit, treatments } = useStore();
+  const { settings, openPopup, userTotalSpent, userLastVisit, treatments, updateUser, showToast, userById } = useStore();
   const [showNotes, setShowNotes] = useState(false);
   if (!user) return null;
 
   const fullName = `${L(user.first)} ${L(user.last)}`;
   const procCount = treatments.filter((tr) => tr.userId === user.id).length;
   const last = userLastVisit(user.id);
+  const referrer = user.referredBy ? userById(user.referredBy) : null;
+  // photo height is expressed in text lines so it scales with the font setting
+  const picSize = `${settings.avatarLines * 3.4}em`;
+
+  const pickReferrer = () => openPopup('pickUser', {
+    title: t('hdr.addRef'),
+    onPick: (u) => { if (u.id !== user.id) { updateUser(user.id, { referredBy: u.id }); showToast(t('hdr.refSet')); } },
+  });
 
   return (
     <div className="card uheader">
-      <div className="pic">
-        <img className="avatar" src={user.photo} width={126} height={126} alt={fullName} style={{ cursor: 'pointer' }}
-          onClick={() => (user.photo ? openPopup('lightbox', { src: user.photo, name: fullName }) : openPopup('photo', { userId: user.id }))} />
-        <button className="iconbtn editfab" onClick={() => openPopup('photo', { userId: user.id })}>
-          <Icon name="edit" size={14} title={t('pp.title')} />
-        </button>
-      </div>
-      <div className="details">
-        <div className="row" style={{ flexWrap: 'wrap' }}>
-          <h2>{fullName}</h2>
-          <span className="muted">{t('common.age')}: {ageOf(user.birth)}</span>
-          <span className="muted">{t('common.id')}: {user.natId}</span>
-          <span className="tag partial"><Icon name="wallet" size={13} />{fmtNum(user.wallet)} {t('hdr.walletPoints')}</span>
-          {user.alerts.length > 0 && <span className="tag alert"><Icon name="alert" size={13} />{t('common.alerts')}</span>}
-          {user.notes.length > 0 && <span className="tag pending"><Icon name="note" size={13} />{t('common.notes')}</span>}
+      <div className="uheader-main">
+        <div className="pic">
+          <img className="avatar" src={user.photo} alt={fullName} style={{ width: picSize, height: picSize, cursor: 'pointer' }}
+            onClick={() => (user.photo ? openPopup('lightbox', { src: user.photo, name: fullName }) : openPopup('photo', { userId: user.id }))} />
+          <button className="iconbtn editfab" onClick={() => openPopup('photo', { userId: user.id })}>
+            <Icon name="edit" size={14} title={t('pp.title')} />
+          </button>
         </div>
-        <div className="row muted"><Icon name="phone" size={14} />{user.phone}<Icon name="mail" size={14} />{user.email}</div>
-        <div className="row muted"><Icon name="pin" size={14} />{L(user.address)}</div>
-        <div style={{ height: '.4em' }} />
-        <div className="socials">
-          {SOCIALS.map((s) => (
-            <span key={s} className={`soc ${user.social[s] ? '' : 'off'}`}
-              title={user.social[s] ? t('hdr.following') : t('hdr.notFollowing')}>
-              <Icon name={s} size={14} />
-              <span className={`st ${user.social[s] ? 'y' : 'n'}`}>{user.social[s] ? '✓' : '✗'}</span>
+
+        <div className="details">
+          {/* line 1 — name | wallet | referrer | alerts | notes */}
+          <div className="row hdr-line1" style={{ flexWrap: 'wrap' }}>
+            <h2>{fullName}</h2>
+            <span className="tag partial"><Icon name="wallet" size={16} />{fmtNum(user.wallet)} {t('hdr.walletPoints')}</span>
+            <span className="row hdr-ref" title={referrer ? t('hdr.changeRef') : t('hdr.addRef')}>
+              <span className="muted">{t('hdr.ref')}:</span>
+              {referrer ? (
+                <img className="avatar" src={referrer.photo} width={30} height={30} alt={`${L(referrer.first)} ${L(referrer.last)}`}
+                  onDoubleClick={pickReferrer} style={{ cursor: 'pointer' }} />
+              ) : (
+                <button className="iconbtn" onClick={pickReferrer}><Icon name="plus" size={14} title={t('hdr.addRef')} /></button>
+              )}
             </span>
-          ))}
+            {user.alerts.length > 0 && <span className="tag alert"><Icon name="alert" size={16} />{t('common.alerts')}</span>}
+            <button className={`iconbtn ${showNotes ? 'on' : ''}`} onClick={() => setShowNotes((s) => !s)} title={showNotes ? t('hdr.hideNotes') : t('hdr.showNotes')}>
+              <Icon name="note" size={16} title={showNotes ? t('hdr.hideNotes') : t('hdr.showNotes')} />
+            </button>
+          </div>
+
+          {/* line 2 — age | id */}
+          <div className="row muted hdr-line2">
+            <span>{t('common.age')}: {ageOf(user.birth)}</span>
+            <span>{t('common.id')}: {user.natId}</span>
+          </div>
+
+          {/* line 3 — phone | email | address */}
+          <div className="row hdr-contact" style={{ flexWrap: 'wrap' }}>
+            <span className="row"><Icon name="phone" size={18} />{user.phone}</span>
+            <span className="row"><Icon name="mail" size={18} />{user.email}</span>
+            <span className="row"><Icon name="pin" size={18} />{L(user.address)}</span>
+          </div>
+
+          <div style={{ height: '.5em' }} />
+
+          <div className="socials">
+            {SOCIALS.map((s) => (
+              <span key={s} className={`soc ${user.social[s] ? '' : 'off'}`}
+                title={user.social[s] ? t('hdr.following') : t('hdr.notFollowing')}>
+                <Icon name={s} size={18} />
+                <span className={`st ${user.social[s] ? 'y' : 'n'}`}>{user.social[s] ? '✓' : '✗'}</span>
+              </span>
+            ))}
+          </div>
         </div>
-        <div className="row" style={{ flexWrap: 'wrap' }}>
-          <button className="btn ghost sm" onClick={() => setShowNotes(!showNotes)}>
-            <Icon name="note" size={14} />{showNotes ? t('hdr.hideNotes') : t('hdr.showNotes')}
-          </button>
-          <button className="btn ghost sm" onClick={() => openPopup('editNotes', { userId: user.id })}>
-            <Icon name="edit" size={14} />{t('hdr.editNotes')}
-          </button>
-        </div>
+      </div>
+
+      {/* B. Footer */}
+      <div className="uheader-footer">
         {showNotes && (
-          <div className="card" style={{ padding: '.7em', boxShadow: 'none' }}>
-            {user.notes.length === 0 ? <span className="muted">{t('tbl.noData')}</span>
-              : user.notes.map((n, i) => <div key={i} className="row"><Icon name="note" size={13} /><span>{L(n)}</span></div>)}
+          <div className="row" style={{ flexWrap: 'wrap' }}>
+            <Icon name="note" size={15} />
+            <span>{user.notes.length === 0 ? t('tbl.noData') : user.notes.map((n) => L(n)).join(' · ')}</span>
+            <button className="link-edit" onClick={() => openPopup('editNotes', { userId: user.id })}>{t('hdr.editLabel')}</button>
           </div>
         )}
         {user.alerts.length > 0 && (
-          <div className="appt-alert"><Icon name="alert" size={14} />{user.alerts.map((a) => L(a)).join(' · ')}</div>
+          <div className="appt-alert"><Icon name="alert" size={15} />{user.alerts.map((a) => L(a)).join(' · ')}</div>
         )}
         {settings.optMemberLine && (
           <div className="muted">

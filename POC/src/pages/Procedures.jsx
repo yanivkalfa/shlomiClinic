@@ -1,12 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { useLang } from '../i18n.jsx';
 import { useStore } from '../store.jsx';
-import { Icon, DataTable, Modal, ModalHead } from '../components/common.jsx';
+import { Icon, DataTable, Modal, ModalHead, PROC_ICONS } from '../components/common.jsx';
+import { AdminPassConfirm } from '../components/guards.jsx';
 import { genTreatmentImg, UNITS } from '../data.js';
 
-// The catalog of procedures the clinic offers. Visits reference these; adding a
-// procedure to a visit copies its default product set (see store.addTreatment).
-function TreatmentEditPopup({ close, procedure }) {
+// The catalog of procedures the clinic offers. Appointments reference these; adding a
+// procedure to an appointment copies its default product set (see store.addTreatment).
+function ProcedureEditPopup({ close, procedure }) {
   const { t, L } = useLang();
   const { products, addProcedure, updateProcedure, showToast } = useStore();
   const isNew = !procedure;
@@ -19,6 +20,7 @@ function TreatmentEditPopup({ close, procedure }) {
     alerts: procedure ? procedure.alerts.map((a) => L(a)).join('\n') : '',
     notes: procedure ? procedure.notes.map((n) => L(n)).filter((s) => s.trim()).join('\n') : '',
   });
+  const [icon, setIcon] = useState(procedure?.icon || 'bolt');
   const [prods, setProds] = useState(procedure?.products ? [...procedure.products] : []);
   const [img, setImg] = useState(procedure?.img || genTreatmentImg(Math.floor(Math.random() * 360)));
   const [pid, setPid] = useState(products[0]?.id ?? '');
@@ -32,6 +34,7 @@ function TreatmentEditPopup({ close, procedure }) {
     if (!f.name.trim()) { setErr(t('fb.nameRequired')); return; }
     const patch = {
       name: [f.name, f.name],
+      icon,
       cost: parseFloat(f.cost) || 0,
       duration: parseInt(f.duration, 10) || 0,
       visitsCount: parseInt(f.visitsCount, 10) || 1,
@@ -48,7 +51,7 @@ function TreatmentEditPopup({ close, procedure }) {
 
   return (
     <Modal onClose={close}>
-      <ModalHead title={isNew ? t('trt.add') : t('common.edit')} icon="bolt" onClose={close} />
+      <ModalHead title={isNew ? t('trt.add') : t('common.edit')} icon={icon} onClose={close} />
       <div className="row">
         <img src={img} width={100} height={75} style={{ borderRadius: 8 }} alt="" />
         <button className="btn ghost sm" onClick={() => fileRef.current?.click()}><Icon name="camera" size={14} />{t('pp.upload')}</button>
@@ -59,6 +62,18 @@ function TreatmentEditPopup({ close, procedure }) {
           const r = new FileReader(); r.onload = () => setImg(r.result); r.readAsDataURL(file);
         }} />
       </div>
+
+      <div>
+        <div className="muted" style={{ marginBottom: '.4em' }}>{t('trt.icon')}</div>
+        <div className="row" style={{ flexWrap: 'wrap' }}>
+          {PROC_ICONS.map((ic) => (
+            <button key={ic} className={`iconbtn ${icon === ic ? 'on' : ''}`} onClick={() => setIcon(ic)}>
+              <Icon name={ic} size={16} title={ic} />
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.6em' }}>
         <label>{t('trt.name')}<input value={f.name} onChange={set('name')} style={{ width: '100%' }} /></label>
         <label>{t('common.cost')}<input type="number" value={f.cost} onChange={set('cost')} style={{ width: '100%' }} /></label>
@@ -103,7 +118,7 @@ function TreatmentEditPopup({ close, procedure }) {
   );
 }
 
-export default function Treatments() {
+export default function Procedures() {
   const { t, L, fmtMoney, fmtNum } = useLang();
   const { procedures, productById, removeProcedure } = useStore();
   const [edit, setEdit] = useState(null);
@@ -111,7 +126,10 @@ export default function Treatments() {
 
   const cols = [
     { key: 'img', label: t('trt.image'), render: (p) => <img src={p.img} width={70} height={52} style={{ borderRadius: 8, cursor: 'pointer' }} alt={L(p.name)} onClick={() => setEdit(p)} /> },
-    { key: 'name', label: t('trt.name'), sortVal: (p) => L(p.name), render: (p) => <b>{L(p.name)}</b> },
+    {
+      key: 'name', label: t('trt.name'), sortVal: (p) => L(p.name),
+      render: (p) => <b className="row"><Icon name={p.icon || 'bolt'} size={16} />{L(p.name)}</b>,
+    },
     { key: 'cost', label: t('common.cost'), sortVal: (p) => p.cost, render: (p) => <b>{fmtMoney(p.cost)}</b> },
     {
       key: 'products', label: t('trt.products'),
@@ -142,16 +160,10 @@ export default function Treatments() {
         <div className="muted" style={{ marginBottom: '.5em' }}>{t('tbl.dblEdit')}</div>
         <DataTable columns={cols} rows={procedures} pageSize={7} onRowDoubleClick={(p) => setEdit(p)} />
       </div>
-      {edit && <TreatmentEditPopup close={() => setEdit(null)} procedure={edit === 'new' ? null : edit} />}
+      {edit && <ProcedureEditPopup close={() => setEdit(null)} procedure={edit === 'new' ? null : edit} />}
       {confirmDel && (
-        <Modal onClose={() => setConfirmDel(null)} className="narrow">
-          <ModalHead title={t('trt.confirmDelete')} icon="trash" onClose={() => setConfirmDel(null)} />
-          <b>{L(confirmDel.name)}</b>
-          <div className="row">
-            <button className="btn danger" onClick={() => { removeProcedure(confirmDel.id); setConfirmDel(null); }}><Icon name="trash" size={14} />{t('common.yes')}</button>
-            <button className="btn ghost" onClick={() => setConfirmDel(null)}>{t('common.no')}</button>
-          </div>
-        </Modal>
+        <AdminPassConfirm close={() => setConfirmDel(null)} title={t('trt.confirmDelete')} subject={L(confirmDel.name)}
+          onConfirm={() => removeProcedure(confirmDel.id)} />
       )}
     </div>
   );

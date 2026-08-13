@@ -2,18 +2,23 @@ import React, { useEffect } from 'react';
 import { useLang } from './i18n.jsx';
 import { useStore, PRESETS } from './store.jsx';
 import { TopBar, LeftPanel, RightPanel } from './components/layout.jsx';
-import { PhotoPopup, QuickPaymentPopup, RewardPopup, AddUserPopup, NotePopup, EditNotesPopup, UserPickerPopup, LightboxPopup, ConsentDocsPopup } from './components/popups.jsx';
+import { LeaveGuardPopup } from './components/guards.jsx';
+import {
+  PhotoPopup, QuickPaymentPopup, RewardPopup, AddUserPopup, NotePopup,
+  EditNotesPopup, UserPickerPopup, PickUserPopup, LightboxPopup, ConsentDocsPopup,
+} from './components/popups.jsx';
 import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
-import CalendarPage from './pages/CalendarPage.jsx';
+import CalendarPage, { NewAppointmentPopup, WorkingHoursPopup } from './pages/CalendarPage.jsx';
 import Messaging from './pages/Messaging.jsx';
 import UsersManagement from './pages/UsersManagement.jsx';
 import UserPage from './pages/UserPage.jsx';
-import VisitPage from './pages/VisitPage.jsx';
-import TreatmentInfo from './pages/TreatmentInfo.jsx';
+import AppointmentPage from './pages/AppointmentPage.jsx';
+import AppointmentInfo from './pages/AppointmentInfo.jsx';
+import Activity from './pages/Activity.jsx';
 import Finances from './pages/Finances.jsx';
 import Inventory from './pages/Inventory.jsx';
-import Treatments from './pages/Treatments.jsx';
+import Procedures from './pages/Procedures.jsx';
 import Orders from './pages/Orders.jsx';
 import LegalForms from './pages/LegalForms.jsx';
 import AlertsNotifications from './pages/AlertsNotifications.jsx';
@@ -21,17 +26,20 @@ import Settings from './pages/Settings.jsx';
 
 const PAGES = {
   home: Home, appointments: CalendarPage, messaging: Messaging, users: UsersManagement,
-  user: UserPage, visit: VisitPage, treatment: TreatmentInfo,
-  finances: Finances, inventory: Inventory, treatments: Treatments, orders: Orders,
+  user: UserPage, visit: AppointmentPage, treatment: AppointmentInfo, activity: Activity,
+  finances: Finances, inventory: Inventory, treatments: Procedures, orders: Orders,
   legal: LegalForms, alerts: AlertsNotifications, settings: Settings,
 };
 
 const POPUPS = {
   photo: PhotoPopup, quickPay: QuickPaymentPopup, reward: RewardPopup, addUser: AddUserPopup,
-  note: NotePopup, editNotes: EditNotesPopup, userPicker: UserPickerPopup, lightbox: LightboxPopup, consent: ConsentDocsPopup,
+  note: NotePopup, editNotes: EditNotesPopup, userPicker: UserPickerPopup, pickUser: PickUserPopup,
+  lightbox: LightboxPopup, consent: ConsentDocsPopup,
+  newAppointment: NewAppointmentPopup, workingHours: WorkingHoursPopup,
 };
 
 const FONT_SIZES = [12.5, 13.8, 15, 16.3, 17.6];
+const APPT_FONTS = [0.74, 0.79, 0.84, 0.9, 0.97];
 
 const isDarkColor = (hex) => {
   const n = parseInt(hex.slice(1), 16);
@@ -52,6 +60,7 @@ function ThemeSync() {
     root.style.setProperty('--c2', scheme.c2);
     root.style.setProperty('--c3', scheme.c3);
     root.style.setProperty('--radius', `${(settings.corners / 100) * 26}px`);
+    root.style.setProperty('--appt-font', `${APPT_FONTS[settings.apptFontLevel - 1]}em`);
     root.style.fontSize = `${FONT_SIZES[settings.fontLevel - 1]}px`;
     root.dataset.dark = dark ? '1' : '0';
     root.dataset.shadows = settings.shadows ? '1' : '0';
@@ -89,6 +98,7 @@ export default function App() {
         const C = POPUPS[p.type];
         return C ? <C key={p.id} close={() => closePopup(p.id)} {...p.props} /> : null;
       })}
+      <LeaveGuardPopup />
       {toast && <div className="toast">{toast.text}</div>}
     </>
   );

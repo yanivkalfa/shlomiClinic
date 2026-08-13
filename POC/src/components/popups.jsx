@@ -1,7 +1,8 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useLang } from '../i18n.jsx';
 import { useStore } from '../store.jsx';
-import { Icon, Modal, ModalHead, PanZoomImg, PayStatusTag } from './common.jsx';
+import { Icon, Modal, ModalHead, PanZoomImg } from './common.jsx';
+import { useGuardedForm } from './guards.jsx';
 import { UserQuickInfo, QuickUserAccess } from './templates.jsx';
 import { genFace, ymd, now } from '../data.js';
 
@@ -182,17 +183,17 @@ export function QuickPaymentPopup({ close, userId, treatmentId }) {
 }
 
 // ---------- Rewards creation (embedded in RewardPopup + Launch Campaign) ----------
-export function RewardsCreation({ onCreate, createLabel }) {
+export function RewardsCreation({ onCreate, createLabel, initial = null }) {
   const { t, L } = useLang();
-  const { procedures } = useStore(); // restrictions list follows the live treatments catalog
-  const [desc, setDesc] = useState('');
-  const [dateInit, setDateInit] = useState(ymd(now()));
-  const [dateEnd, setDateEnd] = useState('');
-  const [restrictions, setRestrictions] = useState([]);
+  const { procedures } = useStore(); // restrictions list follows the live procedures catalog
+  const [desc, setDesc] = useState(initial ? (Array.isArray(initial.desc) ? initial.desc[0] : initial.desc) || '' : '');
+  const [dateInit, setDateInit] = useState(initial?.dateInit || ymd(now()));
+  const [dateEnd, setDateEnd] = useState(initial?.dateEnd || '');
+  const [restrictions, setRestrictions] = useState(initial?.restrictions || []);
   const [conds, setConds] = useState([{ condition: 'birthday', term: 'eq', value: '#CurrentMonth' }]);
-  const [vPercent, setVPercent] = useState('');
-  const [vCash, setVCash] = useState('');
-  const [vPoints, setVPoints] = useState('');
+  const [vPercent, setVPercent] = useState(initial?.percent || '');
+  const [vCash, setVCash] = useState(initial?.cash || '');
+  const [vPoints, setVPoints] = useState(initial?.points || '');
   const [err, setErr] = useState(null);
 
   const CONDS = ['birthday', 'visits', 'treatments', 'money', 'wallet', 'referrals', 'membership', 'frequency', 'coupon'];
@@ -270,42 +271,51 @@ export function RewardsCreation({ onCreate, createLabel }) {
 }
 
 // ---------- Reward popup (grant to a user) ----------
-export function RewardPopup({ close, userId }) {
+export function RewardPopup({ close, userId, reward = null }) {
   const { t } = useLang();
-  const { userById, addReward, showToast } = useStore();
-  const [uid, setUid] = useState(userId || null);
+  const { userById, addReward, updateReward, showToast } = useStore();
+  const [uid, setUid] = useState(reward?.userId || userId || null);
   const user = uid ? userById(uid) : null;
 
   return (
     <Modal onClose={close}>
-      <ModalHead title={t('rw.title')} icon="gift" onClose={close} />
+      <ModalHead title={reward ? t('common.edit') : t('rw.title')} icon="gift" onClose={close} />
       <div>
         <div className="muted" style={{ marginBottom: '.4em' }}>{t('rw.title')}</div>
         {user ? <UserQuickInfo user={user} /> : <QuickUserAccess onFound={(u) => setUid(u.id)} />}
       </div>
       {user && (
-        <RewardsCreation onCreate={(r) => {
-          addReward({ userId: user.id, defId: null, desc: [r.desc, r.desc], status: 'active', dateInit: r.dateInit, dateEnd: r.dateEnd, restrictions: r.restrictions, actual: null, percent: r.percent, cash: r.cash, points: r.points });
-          showToast(t('rw.granted'));
-          close();
-        }} />
+        <RewardsCreation
+          initial={reward}
+          createLabel={reward ? t('common.save') : undefined}
+          onCreate={(r) => {
+            const patch = {
+              userId: user.id, defId: null, desc: [r.desc, r.desc], status: reward?.status || 'active',
+              dateInit: r.dateInit, dateEnd: r.dateEnd, restrictions: r.restrictions,
+              actual: reward?.actual ?? null, percent: r.percent, cash: r.cash, points: r.points,
+            };
+            if (reward) updateReward(reward.id, patch); else addReward(patch);
+            showToast(reward ? t('common.save') : t('rw.granted'));
+            close();
+          }} />
       )}
     </Modal>
   );
 }
 
 // ---------- Add new user ----------
+// react-hook-form drives this one, and useGuardedForm registers it with the store so
+// navigating away while it is dirty raises the "unsaved changes" prompt.
 export function AddUserPopup({ close }) {
   const { t } = useLang();
   const { addUser, navigate, showToast } = useStore();
-  const [f, setF] = useState({ natId: '', first: '', last: '', birth: '', phone: '', email: '', alerts: '', notes: '' });
+  const { register, handleSubmit, formState: { errors }, settle } = useGuardedForm({
+    defaultValues: { natId: '', first: '', last: '', birth: '', phone: '', email: '', alerts: '', notes: '' },
+  });
   const [photo, setPhoto] = useState(null);
   const [showPhoto, setShowPhoto] = useState(false);
-  const [err, setErr] = useState(null);
-  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
 
-  const create = () => {
-    if (!f.natId.trim() || !f.first.trim() || !f.last.trim()) { setErr(t('au.required')); return; }
+  const create = (f) => {
     const id = addUser({
       natId: f.natId, first: [f.first, f.first], last: [f.last, f.last], birth: f.birth || '2000-01-01',
       phone: f.phone, email: f.email, address: [' ', ' '], wallet: 0, memberSince: ymd(now()),
@@ -313,31 +323,37 @@ export function AddUserPopup({ close }) {
       referredBy: null, social: { instagram: false, facebook: false, tiktok: false, whatsapp: false },
       alerts: f.alerts.trim() ? [[f.alerts, f.alerts]] : [], notes: f.notes.trim() ? [[f.notes, f.notes]] : [],
     });
+    settle();               // form is saved — stop guarding navigation
     showToast(t('au.title'));
     close();
     navigate('user', { userId: id });
   };
+
+  const required = { required: true };
+  const invalid = errors.natId || errors.first || errors.last;
 
   return (
     <Modal onClose={close}>
       <ModalHead title={t('au.title')} icon="users" onClose={close} />
       <div className="row" style={{ flexWrap: 'wrap' }}>
         {photo && <img className="avatar" src={photo} width={54} height={54} alt="" />}
-        <button className="btn ghost sm" onClick={() => setShowPhoto(true)}><Icon name="camera" size={14} />{t('pp.title')}</button>
+        <button type="button" className="btn ghost sm" onClick={() => setShowPhoto(true)}><Icon name="camera" size={14} />{t('pp.title')}</button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.6em' }}>
-        <label>{t('common.id')}<input value={f.natId} onChange={set('natId')} style={{ width: '100%' }} /></label>
-        <label>{t('au.birth')}<input type="date" value={f.birth} onChange={set('birth')} style={{ width: '100%' }} /></label>
-        <label>{t('au.first')}<input value={f.first} onChange={set('first')} style={{ width: '100%' }} /></label>
-        <label>{t('au.last')}<input value={f.last} onChange={set('last')} style={{ width: '100%' }} /></label>
-        <label>{t('common.phone')}<input value={f.phone} onChange={set('phone')} style={{ width: '100%' }} /></label>
-        <label>{t('common.email')}<input value={f.email} onChange={set('email')} style={{ width: '100%' }} /></label>
-        <label>{t('au.medAlerts')}<input value={f.alerts} onChange={set('alerts')} style={{ width: '100%' }} /></label>
-        <label>{t('common.notes')}<input value={f.notes} onChange={set('notes')} style={{ width: '100%' }} /></label>
-      </div>
-      <div className="muted row"><Icon name="alert" size={14} />{t('au.alertsFromForms')}</div>
-      {err && <div className="err">{err}</div>}
-      <button className="btn" onClick={create}><Icon name="plus" size={15} />{t('au.create')}</button>
+      <form onSubmit={handleSubmit(create)} style={{ display: 'flex', flexDirection: 'column', gap: '.8em' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.6em' }}>
+          <label>{t('common.id')}<input {...register('natId', required)} style={{ width: '100%' }} /></label>
+          <label>{t('au.birth')}<input type="date" {...register('birth')} style={{ width: '100%' }} /></label>
+          <label>{t('au.first')}<input {...register('first', required)} style={{ width: '100%' }} /></label>
+          <label>{t('au.last')}<input {...register('last', required)} style={{ width: '100%' }} /></label>
+          <label>{t('common.phone')}<input {...register('phone')} style={{ width: '100%' }} /></label>
+          <label>{t('common.email')}<input {...register('email')} style={{ width: '100%' }} /></label>
+          <label>{t('au.medAlerts')}<input {...register('alerts')} style={{ width: '100%' }} /></label>
+          <label>{t('common.notes')}<input {...register('notes')} style={{ width: '100%' }} /></label>
+        </div>
+        <div className="muted row"><Icon name="alert" size={14} />{t('au.alertsFromForms')}</div>
+        {invalid && <div className="err">{t('au.required')}</div>}
+        <button type="submit" className="btn"><Icon name="plus" size={15} />{t('au.create')}</button>
+      </form>
       {showPhoto && <PhotoPopup close={() => setShowPhoto(false)} userId={null} onDone={(img) => setPhoto(img)} />}
     </Modal>
   );
@@ -396,6 +412,17 @@ export function UserPickerPopup({ close, matches, onPick }) {
           );
         })}
       </div>
+    </Modal>
+  );
+}
+
+// Search-and-pick a user, handing the choice back to the caller (referrer, payer…)
+export function PickUserPopup({ close, title, onPick }) {
+  const { t } = useLang();
+  return (
+    <Modal onClose={close} className="narrow">
+      <ModalHead title={title || t('qa.title')} icon="users" onClose={close} />
+      <QuickUserAccess onFound={(u) => { onPick(u); close(); }} />
     </Modal>
   );
 }

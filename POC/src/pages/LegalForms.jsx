@@ -54,8 +54,9 @@ function RichTextBlock({ value, onChange }) {
 
 function FormBuilder({ form, onBack }) {
   const { t, L } = useLang();
-  const { addForm, updateForm, showToast } = useStore();
+  const { addForm, updateForm, showToast, registerDirty, clearDirty } = useStore();
   const [name, setName] = useState(form ? L(form.name) : '');
+  const dirtyId = 'form-builder';
   const [blocks, setBlocks] = useState(form ? form.blocks.map((b) => ({
     ...b,
     q: b.q ? L(b.q) : undefined,
@@ -64,14 +65,22 @@ function FormBuilder({ form, onBack }) {
   })) : []);
   const [err, setErr] = useState(null);
 
-  const add = (type) => setBlocks((bs) => [...bs, {
+  // page-level form: while it holds unsaved edits, leaving raises the confirm popup
+  const [touched, setTouched] = useState(false);
+  useEffect(() => {
+    if (touched) registerDirty(dirtyId, () => { setTouched(false); });
+    else clearDirty(dirtyId);
+    return () => clearDirty(dirtyId);
+  }, [touched, registerDirty, clearDirty]);
+
+  const add = (type) => { setTouched(true); setBlocks((bs) => [...bs, {
     id: genId(), type,
     ...(type === 'rich' ? { html: '' } : {}),
     ...(type === 'toggle' ? { q: '', alert: false } : {}),
     ...(type === 'options' ? { q: '', options: [{ text: '', alert: false }] } : {}),
-  }]);
-  const patch = (id, p) => setBlocks((bs) => bs.map((b) => (b.id === id ? { ...b, ...p } : b)));
-  const remove = (id) => setBlocks((bs) => bs.filter((b) => b.id !== id));
+  }]); };
+  const patch = (id, p) => { setTouched(true); setBlocks((bs) => bs.map((b) => (b.id === id ? { ...b, ...p } : b))); };
+  const remove = (id) => { setTouched(true); setBlocks((bs) => bs.filter((b) => b.id !== id)); };
 
   const save = () => {
     if (!name.trim()) { setErr(t('fb.nameRequired')); return; }
@@ -86,6 +95,8 @@ function FormBuilder({ form, onBack }) {
     }));
     if (form) updateForm(form.id, { name: [name, name], blocks: norm });
     else addForm({ name: [name, name], blocks: norm });
+    setTouched(false);
+    clearDirty(dirtyId);
     showToast(t('common.save'));
     onBack();
   };
@@ -102,7 +113,7 @@ function FormBuilder({ form, onBack }) {
 
       <div className="card" style={{ padding: '1em' }}>
         <label>{t('lg.formName')}
-          <input value={name} onChange={(e) => { setName(e.target.value); setErr(null); }} style={{ width: '100%', maxWidth: '26em' }} />
+          <input value={name} onChange={(e) => { setName(e.target.value); setTouched(true); setErr(null); }} style={{ width: '100%', maxWidth: '26em' }} />
         </label>
         {err && <div className="err">{err}</div>}
       </div>

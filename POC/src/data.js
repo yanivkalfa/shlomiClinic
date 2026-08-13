@@ -93,14 +93,14 @@ export function genSignature(seed = 1) {
 // `products` on a procedure = the default product set + amounts pulled in when
 // the procedure is added to a visit. Units: ml | cc | units | n.
 export const PROCEDURES = [
-  { id: 1, name: ['Lip Filler', 'מילוי שפתיים'], cost: 1200, duration: 45, visitsCount: 1, longevity: ['6–9 months', '6–9 חודשים'], img: genTreatmentImg(320), products: [{ productId: 1, amount: 1, unit: 'ml' }, { productId: 7, amount: 2, unit: 'n' }], alerts: [['Not suitable during pregnancy', 'לא מתאים בהריון']], notes: [['Ask about cold sores history', 'לשאול על היסטוריית הרפס']] },
-  { id: 2, name: ['Full Face Botox', 'בוטוקס פנים מלא'], cost: 1800, duration: 60, visitsCount: 1, longevity: ['3–4 months', '3–4 חודשים'], img: genTreatmentImg(205), products: [{ productId: 2, amount: 50, unit: 'units' }, { productId: 7, amount: 1, unit: 'n' }], alerts: [['Not for patients on blood thinners', 'לא למטופלים הנוטלים מדללי דם']], notes: [[' ', ' ']] },
-  { id: 3, name: ['Forehead Botox', 'בוטוקס מצח'], cost: 900, duration: 30, visitsCount: 1, longevity: ['3–4 months', '3–4 חודשים'], img: genTreatmentImg(180), products: [{ productId: 4, amount: 30, unit: 'units' }], alerts: [], notes: [[' ', ' ']] },
-  { id: 4, name: ['Cheek Filler', 'מילוי לחיים'], cost: 1500, duration: 45, visitsCount: 1, longevity: ['9–12 months', '9–12 חודשים'], img: genTreatmentImg(285), products: [{ productId: 1, amount: 2, unit: 'ml' }], alerts: [], notes: [[' ', ' ']] },
-  { id: 5, name: ['Permanent Makeup — Lips', 'איפור קבוע — שפתיים'], cost: 1400, duration: 90, visitsCount: 2, longevity: ['1–2 years', '1–2 שנים'], img: genTreatmentImg(345), products: [{ productId: 5, amount: 3, unit: 'cc' }, { productId: 7, amount: 2, unit: 'n' }], alerts: [['Patch test required 48h before', 'נדרש תבחין רגישות 48 שעות מראש']], notes: [[' ', ' ']] },
-  { id: 6, name: ['Permanent Makeup — Eyebrows', 'איפור קבוע — גבות'], cost: 1100, duration: 75, visitsCount: 2, longevity: ['1–2 years', '1–2 שנים'], img: genTreatmentImg(35), products: [{ productId: 5, amount: 2, unit: 'cc' }, { productId: 7, amount: 1, unit: 'n' }], alerts: [], notes: [[' ', ' ']] },
-  { id: 7, name: ['Jawline Contour', 'עיצוב קו לסת'], cost: 2200, duration: 60, visitsCount: 1, longevity: ['9–12 months', '9–12 חודשים'], img: genTreatmentImg(255), products: [{ productId: 1, amount: 4, unit: 'ml' }], alerts: [], notes: [['Premium treatment — offer payment plan', 'טיפול פרימיום — להציע פריסת תשלומים']] },
-  { id: 8, name: ['Skin Booster', 'סקין בוסטר'], cost: 950, duration: 40, visitsCount: 3, longevity: ['4–6 months', '4–6 חודשים'], img: genTreatmentImg(95), products: [{ productId: 6, amount: 2, unit: 'ml' }], alerts: [], notes: [[' ', ' ']] },
+  { id: 1, name: ['Lip Filler', 'מילוי שפתיים'], icon: 'lips', cost: 1200, duration: 45, visitsCount: 1, longevity: ['6–9 months', '6–9 חודשים'], img: genTreatmentImg(320), products: [{ productId: 1, amount: 1, unit: 'ml' }, { productId: 7, amount: 2, unit: 'n' }], alerts: [['Not suitable during pregnancy', 'לא מתאים בהריון']], notes: [['Ask about cold sores history', 'לשאול על היסטוריית הרפס']] },
+  { id: 2, name: ['Full Face Botox', 'בוטוקס פנים מלא'], icon: 'sparkle', cost: 1800, duration: 60, visitsCount: 1, longevity: ['3–4 months', '3–4 חודשים'], img: genTreatmentImg(205), products: [{ productId: 2, amount: 50, unit: 'units' }, { productId: 7, amount: 1, unit: 'n' }], alerts: [['Not for patients on blood thinners', 'לא למטופלים הנוטלים מדללי דם']], notes: [[' ', ' ']] },
+  { id: 3, name: ['Forehead Botox', 'בוטוקס מצח'], icon: 'syringe', cost: 900, duration: 30, visitsCount: 1, longevity: ['3–4 months', '3–4 חודשים'], img: genTreatmentImg(180), products: [{ productId: 4, amount: 30, unit: 'units' }], alerts: [], notes: [[' ', ' ']] },
+  { id: 4, name: ['Cheek Filler', 'מילוי לחיים'], icon: 'droplet', cost: 1500, duration: 45, visitsCount: 1, longevity: ['9–12 months', '9–12 חודשים'], img: genTreatmentImg(285), products: [{ productId: 1, amount: 2, unit: 'ml' }], alerts: [], notes: [[' ', ' ']] },
+  { id: 5, name: ['Permanent Makeup — Lips', 'איפור קבוע — שפתיים'], icon: 'lips', cost: 1400, duration: 90, visitsCount: 2, longevity: ['1–2 years', '1–2 שנים'], img: genTreatmentImg(345), products: [{ productId: 5, amount: 3, unit: 'cc' }, { productId: 7, amount: 2, unit: 'n' }], alerts: [['Patch test required 48h before', 'נדרש תבחין רגישות 48 שעות מראש']], notes: [[' ', ' ']] },
+  { id: 6, name: ['Permanent Makeup — Eyebrows', 'איפור קבוע — גבות'], icon: 'brow', cost: 1100, duration: 75, visitsCount: 2, longevity: ['1–2 years', '1–2 שנים'], img: genTreatmentImg(35), products: [{ productId: 5, amount: 2, unit: 'cc' }, { productId: 7, amount: 1, unit: 'n' }], alerts: [], notes: [[' ', ' ']] },
+  { id: 7, name: ['Jawline Contour', 'עיצוב קו לסת'], icon: 'sparkle', cost: 2200, duration: 60, visitsCount: 1, longevity: ['9–12 months', '9–12 חודשים'], img: genTreatmentImg(255), products: [{ productId: 1, amount: 4, unit: 'ml' }], alerts: [], notes: [['Premium treatment — offer payment plan', 'טיפול פרימיום — להציע פריסת תשלומים']] },
+  { id: 8, name: ['Skin Booster', 'סקין בוסטר'], icon: 'droplet', cost: 950, duration: 40, visitsCount: 3, longevity: ['4–6 months', '4–6 חודשים'], img: genTreatmentImg(95), products: [{ productId: 6, amount: 2, unit: 'ml' }], alerts: [], notes: [[' ', ' ']] },
 ];
 
 export const PRODUCTS = [
@@ -162,6 +162,16 @@ export const VISITS = [
   { id: 20, userId: 8, date: ymd(fw(6)), start: 11 * 60, end: 11 * 60 + 45, status: 'scheduled', photos: { before: [], after: [] }, signed: false },
   { id: 21, userId: 1, date: ymd(fw(14)), start: 10 * 60, end: 10 * 60 + 45, status: 'scheduled', photos: { before: [], after: [] }, signed: false },
 ];
+
+// two past appointments ship with signed documentation so the demo has content
+VISITS.find((v) => v.id === 2).doc = {
+  text: ['Patient tolerated the procedure well. 0.5ml injected into the upper lip, 0.5ml lower. Mild swelling expected for 48h; aftercare sheet handed over.', 'המטופלת עברה את הטיפול היטב. הוזרק 0.5 מ"ל לשפה העליונה ו-0.5 מ"ל לתחתונה. צפויה נפיחות קלה במשך 48 שעות; דף הנחיות נמסר.'],
+  signedAt: `${ymd(bg(60))} 11:05`,
+};
+VISITS.find((v) => v.id === 6).doc = {
+  text: ['Jawline contouring completed with 4ml filler, symmetric result. Patient advised to avoid pressure on the area for one week.', 'עיצוב קו הלסת הושלם עם 4 מ"ל חומר מילוי, תוצאה סימטרית. הומלץ להימנע מלחץ על האזור למשך שבוע.'],
+  signedAt: `${ymd(bg(45))} 17:20`,
+};
 
 // treatments: procedure done in a visit
 export const TREATMENTS = [
@@ -270,13 +280,17 @@ export const FORMS = [
   },
 ];
 
-// Admin-defined alert / notification rules
+// Admin-defined alert / notification rules.
+// `procedural` rules drive the per-user Notifications table: when a procedure was
+// last done longer ago than `period`, a renewal notification is raised.
 export const ALERT_RULES = [
-  { id: 1, kind: 'medical', text: ['Diabetes mellitus', 'סוכרת'], productId: null, threshold: null, active: true, fromForms: true },
-  { id: 2, kind: 'medical', text: ['Pregnancy — no injections', 'הריון — ללא הזרקות'], productId: null, threshold: null, active: true, fromForms: true },
-  { id: 3, kind: 'inventory', text: [' ', ' '], productId: 4, threshold: 3, active: true, fromForms: false },
-  { id: 4, kind: 'inventory', text: [' ', ' '], productId: 2, threshold: 5, active: true, fromForms: false },
-  { id: 5, kind: 'custom', text: ['Unpleasant patient — handle with care', 'מטופל/ת לא נעים/ה — לטפל בזהירות'], productId: null, threshold: null, active: false, fromForms: false },
+  { id: 1, kind: 'medical', text: ['Diabetes mellitus', 'סוכרת'], productId: null, threshold: null, procId: null, period: null, active: true, fromForms: true },
+  { id: 2, kind: 'medical', text: ['Pregnancy — no injections', 'הריון — ללא הזרקות'], productId: null, threshold: null, procId: null, period: null, active: true, fromForms: true },
+  { id: 3, kind: 'inventory', text: [' ', ' '], productId: 4, threshold: 3, procId: null, period: null, active: true, fromForms: false },
+  { id: 4, kind: 'inventory', text: [' ', ' '], productId: 2, threshold: 5, procId: null, period: null, active: true, fromForms: false },
+  { id: 5, kind: 'procedural', text: [' ', ' '], productId: null, threshold: null, procId: 2, period: '#3Months', active: true, fromForms: false },
+  { id: 6, kind: 'procedural', text: [' ', ' '], productId: null, threshold: null, procId: 1, period: '#6Months', active: true, fromForms: false },
+  { id: 7, kind: 'custom', text: ['Unpleasant patient — handle with care', 'מטופל/ת לא נעים/ה — לטפל בזהירות'], productId: null, threshold: null, procId: null, period: null, active: false, fromForms: false },
 ];
 
 export const MESSAGES = [
@@ -292,9 +306,10 @@ export const NOTES = [
   { id: 3, text: ['Sterilization certificates renewal next month', 'חידוש אישורי עיקור בחודש הבא'], date: ymd(bg(4)) },
 ];
 
-// Google-calendar mock: the "Clinic Open" event title drives the day-schedule working hours
+// Google-calendar mock: the "Clinic Open" event title drives the day-schedule working
+// hours. These events are parsed in the background and are never drawn on the calendar.
 export const GCAL_EVENTS = [];
-for (let d = -30; d <= 30; d++) {
+for (let d = -30; d <= 60; d++) {
   const day = addDays(T, d);
   if (day.getDay() !== 6) GCAL_EVENTS.push({ id: `open-${d}`, title: 'Clinic Open 8-12, 13-16, 18-20', date: ymd(day), open: true });
 }
@@ -303,5 +318,14 @@ export function parseOpenRanges(title) {
   const m = [...title.matchAll(/(\d{1,2})\s*-\s*(\d{1,2})/g)];
   return m.map((x) => [parseInt(x[1], 10) * 60, parseInt(x[2], 10) * 60]).filter(([a, b]) => b > a);
 }
+
+// date (ymd) -> [[startMin, endMin], …]; [] means closed all day.
+// Seeded from the Google feed, then editable from the calendar page.
+export const WORKING_HOURS = Object.fromEntries(
+  GCAL_EVENTS.map((e) => [e.date, parseOpenRanges(e.title)]),
+);
+
+export const SMART_PERIODS = ['#1Month', '#3Months', '#6Months', '#1Year', '#5Years'];
+export const PERIOD_MONTHS = { '#1Month': 1, '#3Months': 3, '#6Months': 6, '#1Year': 12, '#5Years': 60 };
 
 export const ADMIN = { username: 'shlomi', password: 'clinic123' };

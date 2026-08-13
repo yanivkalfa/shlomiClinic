@@ -3,6 +3,11 @@ import { useLang } from '../i18n.jsx';
 import { useStore, PRESETS } from '../store.jsx';
 import { Icon, Toggle } from '../components/common.jsx';
 
+const RP_LABEL = {
+  quick: 'set.rpQuick', calendar: 'set.rpCalendar', pulse: 'set.rpPulse',
+  notes: 'set.rpAdminNotes', today: 'set.rpToday',
+};
+
 export default function Settings() {
   const { t } = useLang();
   const { settings, setSettings } = useStore();
@@ -10,6 +15,13 @@ export default function Settings() {
   const set = (patch) => setSettings((s) => ({ ...s, ...patch }));
   const setRp = (k, v) => setSettings((s) => ({ ...s, rp: { ...s.rp, [k]: v } }));
   const setAppt = (k, v) => setSettings((s) => ({ ...s, apptFields: { ...s.apptFields, [k]: v } }));
+  const move = (i, dir) => setSettings((s) => {
+    const next = [...s.rpOrder];
+    const j = i + dir;
+    if (j < 0 || j >= next.length) return s;
+    [next[i], next[j]] = [next[j], next[i]];
+    return { ...s, rpOrder: next };
+  });
 
   return (
     <div className="page">
@@ -21,6 +33,11 @@ export default function Settings() {
           <span>{t('set.clinicName')}</span>
           <input value={settings.clinicName} placeholder={t('set.clinicNamePh')}
             onChange={(e) => set({ clinicName: e.target.value })} style={{ width: '18em', maxWidth: '100%' }} />
+        </div>
+        <div className="setrow">
+          <span>{t('set.slogan')}</span>
+          <input value={settings.clinicSlogan} placeholder={t('set.sloganPh')}
+            onChange={(e) => set({ clinicSlogan: e.target.value })} style={{ width: '18em', maxWidth: '100%' }} />
         </div>
         <div className="setrow">
           <span>{t('set.clinicLogo')}</span>
@@ -92,10 +109,22 @@ export default function Settings() {
 
       <div className="card" style={{ padding: '1em' }}>
         <h2 className="row" style={{ marginBottom: '.4em' }}><Icon name="box" size={17} />{t('set.rightPanel')}</h2>
-        <div className="setrow"><span>{t('set.rpQuick')}</span><Toggle on={settings.rp.quick} onChange={(v) => setRp('quick', v)} /></div>
-        <div className="setrow"><span>{t('set.rpCalendar')}</span><Toggle on={settings.rp.calendar} onChange={(v) => setRp('calendar', v)} /></div>
-        <div className="setrow"><span>{t('set.rpPulse')}</span><Toggle on={settings.rp.pulse} onChange={(v) => setRp('pulse', v)} /></div>
-        <div className="setrow"><span>{t('set.rpToday')}</span><Toggle on={settings.rp.today} onChange={(v) => setRp('today', v)} /></div>
+        <div className="muted" style={{ marginBottom: '.5em' }}>{t('set.rpOrder')}</div>
+        <div className="rp-reorder">
+          {settings.rpOrder.map((key, i) => (
+            <div key={key} className="rp-row">
+              <Icon name="grip" size={15} />
+              <span style={{ flex: 1 }}>{t(RP_LABEL[key])}</span>
+              <button className="iconbtn" disabled={i === 0} style={{ opacity: i === 0 ? .35 : 1 }} onClick={() => move(i, -1)}>
+                <Icon name="chevL" size={12} title={t('set.moveUp')} />
+              </button>
+              <button className="iconbtn" disabled={i === settings.rpOrder.length - 1} style={{ opacity: i === settings.rpOrder.length - 1 ? .35 : 1 }} onClick={() => move(i, 1)}>
+                <Icon name="chevR" size={12} title={t('set.moveDown')} />
+              </button>
+              <Toggle on={settings.rp[key]} onChange={(v) => setRp(key, v)} />
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="card" style={{ padding: '1em' }}>
@@ -117,6 +146,24 @@ export default function Settings() {
         <div className="setrow"><span>{t('set.apVisitsSpend')}</span><Toggle on={settings.apptFields.visitsSpend} onChange={(v) => setAppt('visitsSpend', v)} /></div>
         <div className="setrow"><span>{t('set.apNotes')}</span><Toggle on={settings.apptFields.notes} onChange={(v) => setAppt('notes', v)} /></div>
         <div className="setrow"><span>{t('set.apAlerts')}</span><Toggle on={settings.apptFields.alerts} onChange={(v) => setAppt('alerts', v)} /></div>
+        <div className="setrow">
+          <span>{t('set.avatarSize')} · {t('set.lines', { n: settings.avatarLines })}</span>
+          <input type="range" min="1" max="5" step="1" value={settings.avatarLines}
+            onChange={(e) => set({ avatarLines: Number(e.target.value) })} style={{ width: '14em' }} />
+        </div>
+        <div className="setrow">
+          <span>{t('set.apptFont')} · {settings.apptFontLevel}/5</span>
+          <input type="range" min="1" max="5" step="1" value={settings.apptFontLevel}
+            onChange={(e) => set({ apptFontLevel: Number(e.target.value) })} style={{ width: '14em' }} />
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: '1em' }}>
+        <h2 className="row" style={{ marginBottom: '.4em' }}><Icon name="doc" size={17} />{t('set.appointmentPage')}</h2>
+        <div className="setrow">
+          <span>{t('set.docArea')}</span>
+          <Toggle on={settings.showDoc} onChange={(v) => set({ showDoc: v })} />
+        </div>
       </div>
 
       <div className="card" style={{ padding: '1em' }}>

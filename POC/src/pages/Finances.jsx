@@ -4,19 +4,22 @@ import { Bar } from 'react-chartjs-2';
 import { useLang } from '../i18n.jsx';
 import { useStore } from '../store.jsx';
 import { Icon, DataTable, Tabs, Modal, ModalHead } from '../components/common.jsx';
+import { AdminPassConfirm } from '../components/guards.jsx';
 import { RewardsCreation } from '../components/popups.jsx';
 import { ymd, today, addMonths, ADMIN } from '../data.js';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
-// password gate -> edit payment in the quick-charge format
+// password gate -> edit payment in the quick-charge format; deleting from here
+// asks for the admin password a second time.
 function PaymentEditPopup({ close, paymentId }) {
   const { t, fmtMoney } = useLang();
-  const { payments, updatePayment, showToast } = useStore();
+  const { payments, updatePayment, removePayment, showToast } = useStore();
   const payment = payments.find((p) => p.id === paymentId);
   const [pass, setPass] = useState('');
   const [ok, setOk] = useState(false);
   const [err, setErr] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
   const [date, setDate] = useState(payment?.date || ymd(today()));
   const [method, setMethod] = useState(payment?.type || 'credit');
   const [sum, setSum] = useState(String(payment?.amount ?? ''));
@@ -24,36 +27,48 @@ function PaymentEditPopup({ close, paymentId }) {
 
   if (!payment) return null;
   return (
-    <Modal onClose={close} className="narrow">
-      <ModalHead title={t('common.edit')} icon="edit" onClose={close} />
-      {!ok ? (
-        <>
-          <div className="muted">{t('fin.editPass')}</div>
-          <input type="password" value={pass} onChange={(e) => { setPass(e.target.value); setErr(false); }}
-            onKeyDown={(e) => e.key === 'Enter' && (pass === ADMIN.password ? setOk(true) : setErr(true))} autoFocus />
-          {err && <div className="err">{t('fin.wrongPass')}</div>}
-          <button className="btn" onClick={() => (pass === ADMIN.password ? setOk(true) : setErr(true))}>
-            <Icon name="check" size={15} />{t('qa.go')}
-          </button>
-        </>
-      ) : (
-        <>
-          <label className="row">{t('common.date')}<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
-          <div className="row" style={{ flexWrap: 'wrap' }}>
-            {METHODS.map((m) => (
-              <span key={m} className={`chip ${method === m ? 'on' : ''}`} onClick={() => setMethod(m)}>{t(`payType.${m}`)}</span>
-            ))}
-          </div>
-          <label className="row">{t('common.sum')}
-            <input type="number" value={sum} onChange={(e) => setSum(e.target.value)} style={{ width: '8em' }} />
-            <span className="muted">({fmtMoney(payment.amount)})</span>
-          </label>
-          <button className="btn" onClick={() => { updatePayment(paymentId, { date, type: method, amount: parseFloat(sum) || payment.amount }); showToast(t('common.save')); close(); }}>
-            <Icon name="check" size={15} />{t('common.save')}
-          </button>
-        </>
+    <>
+      <Modal onClose={close} className="narrow">
+        <ModalHead title={t('common.edit')} icon="edit" onClose={close} />
+        {!ok ? (
+          <>
+            <div className="muted">{t('fin.editPass')}</div>
+            <input type="password" value={pass} onChange={(e) => { setPass(e.target.value); setErr(false); }}
+              onKeyDown={(e) => e.key === 'Enter' && (pass === ADMIN.password ? setOk(true) : setErr(true))} autoFocus />
+            {err && <div className="err">{t('fin.wrongPass')}</div>}
+            <button className="btn" onClick={() => (pass === ADMIN.password ? setOk(true) : setErr(true))}>
+              <Icon name="check" size={15} />{t('qa.go')}
+            </button>
+          </>
+        ) : (
+          <>
+            <label className="row">{t('common.date')}<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              {METHODS.map((m) => (
+                <span key={m} className={`chip ${method === m ? 'on' : ''}`} onClick={() => setMethod(m)}>{t(`payType.${m}`)}</span>
+              ))}
+            </div>
+            <label className="row">{t('common.sum')}
+              <input type="number" value={sum} onChange={(e) => setSum(e.target.value)} style={{ width: '8em' }} />
+              <span className="muted">({fmtMoney(payment.amount)})</span>
+            </label>
+            <div className="row">
+              <button className="btn" onClick={() => { updatePayment(paymentId, { date, type: method, amount: parseFloat(sum) || payment.amount }); showToast(t('common.save')); close(); }}>
+                <Icon name="check" size={15} />{t('common.save')}
+              </button>
+              <button className="btn danger" onClick={() => setConfirmDel(true)}>
+                <Icon name="trash" size={15} />{t('fin.deletePayment')}
+              </button>
+            </div>
+          </>
+        )}
+      </Modal>
+      {confirmDel && (
+        <AdminPassConfirm close={() => setConfirmDel(false)} title={t('fin.deletePayment')}
+          subject={fmtMoney(payment.amount)}
+          onConfirm={() => { removePayment(paymentId); close(); }} />
       )}
-    </Modal>
+    </>
   );
 }
 
@@ -186,7 +201,15 @@ export default function Finances() {
             <label className="row muted">{t('common.from')}<input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
             <label className="row muted">{t('common.until')}<input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label>
           </div>
-          <DataTable columns={payCols} rows={rowsWithMeta} searchText={q} searchFn={searchFn} pageSize={9} />
+          <DataTable columns={payCols} rows={rowsWithMeta} searchText={q} searchFn={searchFn} pageSize={9}
+            footer={(
+              <div className="muted" style={{ paddingTop: '.6em' }}>
+                {t('fin.summary', {
+                  n: fmtNum(rowsWithMeta.length),
+                  sum: fmtMoney(rowsWithMeta.reduce((s, p) => s + p.amount, 0)),
+                })}
+              </div>
+            )} />
         </div>
       )}
 

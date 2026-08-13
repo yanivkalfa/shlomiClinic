@@ -2,27 +2,33 @@ import React, { useState } from 'react';
 import { useLang } from '../i18n.jsx';
 import { useStore } from '../store.jsx';
 import { Icon, DataTable, Modal, ModalHead, Toggle } from '../components/common.jsx';
+import { AdminPassConfirm } from '../components/guards.jsx';
+import { SMART_PERIODS } from '../data.js';
 
-const KINDS = ['medical', 'inventory', 'custom'];
-const KIND_ICON = { medical: 'alert', inventory: 'box', custom: 'bell' };
+const KINDS = ['medical', 'inventory', 'procedural', 'custom'];
+const KIND_ICON = { medical: 'alert', inventory: 'box', procedural: 'clock', custom: 'bell' };
 
 function AlertEditPopup({ close, rule }) {
   const { t, L } = useLang();
-  const { products, addAlertRule, updateAlertRule, showToast } = useStore();
+  const { products, procedures, addAlertRule, updateAlertRule, showToast } = useStore();
   const isNew = !rule;
   const [kind, setKind] = useState(rule?.kind || 'medical');
   const [text, setText] = useState(rule ? L(rule.text).trim() : '');
   const [productId, setProductId] = useState(rule?.productId ?? products[0]?.id ?? '');
   const [threshold, setThreshold] = useState(rule?.threshold ?? 3);
+  const [procId, setProcId] = useState(rule?.procId ?? procedures[0]?.id ?? '');
+  const [period, setPeriod] = useState(rule?.period ?? '#3Months');
   const [err, setErr] = useState(null);
 
   const save = () => {
-    if (kind !== 'inventory' && !text.trim()) { setErr(t('an.text')); return; }
+    if ((kind === 'medical' || kind === 'custom') && !text.trim()) { setErr(t('an.text')); return; }
     const patch = {
       kind,
-      text: kind === 'inventory' ? [' ', ' '] : [text, text],
+      text: kind === 'medical' || kind === 'custom' ? [text, text] : [' ', ' '],
       productId: kind === 'inventory' ? Number(productId) : null,
       threshold: kind === 'inventory' ? parseInt(threshold, 10) || 0 : null,
+      procId: kind === 'procedural' ? Number(procId) : null,
+      period: kind === 'procedural' ? period : null,
       active: rule?.active ?? true,
       fromForms: rule?.fromForms ?? false,
     };
@@ -45,7 +51,7 @@ function AlertEditPopup({ close, rule }) {
         </div>
       </div>
 
-      {kind === 'inventory' ? (
+      {kind === 'inventory' && (
         <>
           <label>{t('ord.product')}
             <select value={productId} onChange={(e) => setProductId(Number(e.target.value))} style={{ width: '100%' }}>
@@ -56,7 +62,24 @@ function AlertEditPopup({ close, rule }) {
             <input type="number" min="0" value={threshold} onChange={(e) => setThreshold(e.target.value)} style={{ width: '6em' }} />
           </label>
         </>
-      ) : (
+      )}
+
+      {kind === 'procedural' && (
+        <>
+          <label>{t('an.procedure')}
+            <select value={procId} onChange={(e) => setProcId(Number(e.target.value))} style={{ width: '100%' }}>
+              {procedures.map((p) => <option key={p.id} value={p.id}>{L(p.name)}</option>)}
+            </select>
+          </label>
+          <label>{t('an.renewEvery')}
+            <select value={period} onChange={(e) => setPeriod(e.target.value)} style={{ width: '100%' }}>
+              {SMART_PERIODS.map((p) => <option key={p} value={p}>{t(`period.${p}`)} · {p}</option>)}
+            </select>
+          </label>
+        </>
+      )}
+
+      {(kind === 'medical' || kind === 'custom') && (
         <label>{t('an.text')}
           <input value={text} onChange={(e) => { setText(e.target.value); setErr(null); }} style={{ width: '100%' }} />
         </label>
@@ -70,7 +93,7 @@ function AlertEditPopup({ close, rule }) {
 
 export default function AlertsNotifications() {
   const { t, L, fmtNum } = useLang();
-  const { alertRules, productById, countOfProduct, updateAlertRule, removeAlertRule } = useStore();
+  const { alertRules, productById, procById, countOfProduct, updateAlertRule, removeAlertRule } = useStore();
   const [edit, setEdit] = useState(null);
   const [confirmDel, setConfirmDel] = useState(null);
 
@@ -78,6 +101,10 @@ export default function AlertsNotifications() {
     if (r.kind === 'inventory') {
       const p = productById(r.productId);
       return t('an.invRule', { product: p ? L(p.name) : '—', n: fmtNum(r.threshold) });
+    }
+    if (r.kind === 'procedural') {
+      const p = procById(r.procId);
+      return t('an.procRule', { procedure: p ? L(p.name) : '—', period: t(`period.${r.period}`) });
     }
     return L(r.text);
   };
@@ -130,14 +157,8 @@ export default function AlertsNotifications() {
       </div>
       {edit && <AlertEditPopup close={() => setEdit(null)} rule={edit === 'new' ? null : edit} />}
       {confirmDel && (
-        <Modal onClose={() => setConfirmDel(null)} className="narrow">
-          <ModalHead title={t('an.confirmDelete')} icon="trash" onClose={() => setConfirmDel(null)} />
-          <b>{describe(confirmDel)}</b>
-          <div className="row">
-            <button className="btn danger" onClick={() => { removeAlertRule(confirmDel.id); setConfirmDel(null); }}><Icon name="trash" size={14} />{t('common.yes')}</button>
-            <button className="btn ghost" onClick={() => setConfirmDel(null)}>{t('common.no')}</button>
-          </div>
-        </Modal>
+        <AdminPassConfirm close={() => setConfirmDel(null)} title={t('an.confirmDelete')} subject={describe(confirmDel)}
+          onConfirm={() => removeAlertRule(confirmDel.id)} />
       )}
     </div>
   );

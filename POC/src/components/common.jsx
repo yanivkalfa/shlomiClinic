@@ -49,7 +49,20 @@ const PATHS = {
   facebook: 'M14 21v-8h3l.7-3.5H14V7.3c0-1 .3-1.8 2-1.8h1.8V2.4C17.5 2.3 16.4 2.2 15.2 2.2 12.6 2.2 10.8 3.8 10.8 6.7v2.8H7.7V13h3.1v8z',
   tiktok: 'M15 3c.4 2.6 2 4.2 4.5 4.5v3.2c-1.7 0-3.2-.5-4.5-1.4v6.2A5.5 5.5 0 1 1 9.5 10v3.3A2.3 2.3 0 1 0 11.8 15.6V3z',
   whatsapp: 'M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3zM8.5 8.5c.3-.8 1-.8 1.3-.2l.8 1.5c.2.4-.2.9-.6 1.3s.6 1.8 1.6 2.6 2 1.3 2.4 1l1-.7c.5-.3 1.1.2 1.4.7.2.5.2 1-.3 1.5-2.7 2.2-8.9-3.3-7.6-7.7z',
+  // procedure glyphs
+  lips: 'M4 12c3-4 5-5 8-5s5 1 8 5c-3 4-5 5-8 5s-5-1-8-5zM4 12h16',
+  syringe: 'M14 3l7 7M17.5 6.5 20 4M12.5 7.5 16.5 11.5M11 9l4 4-7 7H4v-4z',
+  sparkle: 'M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z',
+  droplet: 'M12 3s6 6.5 6 10.5a6 6 0 0 1-12 0C6 9.5 12 3 12 3z',
+  brow: 'M4 13c3-5 13-5 16 0M6 10.5c3-2.5 9-2.5 12 0',
+  heart: 'M12 20s-7.5-4.7-9.2-9A5 5 0 0 1 12 7a5 5 0 0 1 9.2 4c-1.7 4.3-9.2 9-9.2 9z',
+  download: 'M12 3v12M7.5 10.5 12 15l4.5-4.5M4 20h16',
+  image: 'M3.5 5h17v14h-17zM3.5 15l5-5 4 4 3-3 5 5',
+  grip: 'M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01',
 };
+
+// icons offered when naming a procedure
+export const PROC_ICONS = ['lips', 'syringe', 'sparkle', 'droplet', 'brow', 'heart', 'bolt', 'gift'];
 
 export function Icon({ name, size = 18, className = '', title }) {
   return (

@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useLang } from '../i18n.jsx';
 import { useStore } from '../store.jsx';
 import { Icon, PayStatusTag } from '../components/common.jsx';
-import { GCAL_EVENTS, parseOpenRanges, ymd, today } from '../data.js';
+import { fetchWeather, queryKeys } from '../api.js';
+import { ymd, today } from '../data.js';
 
 const PX = 1.7;      // pixels per minute
 const GAP_H = 34;    // collapsed "closed" divider height
@@ -14,21 +16,17 @@ function useClock() {
   return d;
 }
 
-function useWeather() {
-  const mk = () => ({
-    temp: 24 + Math.floor(Math.random() * 9),
-    kind: ['sunny', 'partly', 'clear', 'hot'][Math.floor(Math.random() * 4)],
-    humidity: 40 + Math.floor(Math.random() * 35),
-  });
-  const [w, setW] = useState(mk);
-  useEffect(() => { const id = setInterval(() => setW(mk()), 30 * 60 * 1000); return () => clearInterval(id); }, []);
-  return w;
-}
-
 function ClockWeather() {
   const { t, fmtDateLong } = useLang();
   const d = useClock();
-  const w = useWeather();
+  // real query, mocked transport — refreshes every 30 minutes and aborts on navigation
+  const { data: w } = useQuery({
+    queryKey: queryKeys.weather,
+    queryFn: fetchWeather,
+    refetchInterval: 30 * 60 * 1000,
+    staleTime: 30 * 60 * 1000,
+    placeholderData: { temp: 26, kind: 'clear', humidity: 55 },
+  });
   const hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0'), ss = String(d.getSeconds()).padStart(2, '0');
   return (
     <div className="card clockweather">
@@ -80,7 +78,7 @@ function ApptBlock({ visit, template, simple, style, onPointerDown, className = 
   if (!user) return null;
 
   const trs = treatmentsOfVisit(visit.id);
-  const procNames = trs.map((tr) => L(procById(tr.procId)?.name)).filter(Boolean).join(', ');
+  const procs = trs.map((tr) => procById(tr.procId)).filter(Boolean);
   const last = userLastVisit(user.id);
   const lastTrs = last ? treatmentsOfVisit(last.id).map((tr) => L(procById(tr.procId)?.name)).filter(Boolean).join(', ') : null;
   const fmtMin = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`;
@@ -91,7 +89,11 @@ function ApptBlock({ visit, template, simple, style, onPointerDown, className = 
         <b>{fmtMin(visit.start)}</b>
         <img className="avatar" src={user.photo} width={34} height={34} alt="" />
         <span><b>{L(user.first)} {L(user.last)}</b><br /><span className="muted">{user.phone}</span></span>
-        <span>{procNames}</span>
+        <span style={{ display: 'inline-flex', flexDirection: 'column', gap: '.15em' }}>
+          {procs.map((p) => (
+            <span key={p.id} className="row" style={{ gap: '.35em' }}><Icon name={p.icon || 'bolt'} size={14} />{L(p.name)}</span>
+          ))}
+        </span>
         {f.payStatus && <PayStatusTag status={visitPayStatus(visit.id)} sum={visitPaid(visit.id)} fmtMoney={fmtMoney} />}
         {(f.lastVisit || f.lastTreatments) && (
           <span className="muted">
@@ -123,13 +125,13 @@ function ApptBlock({ visit, template, simple, style, onPointerDown, className = 
 
 function TodayAppointments() {
   const { t } = useLang();
-  const { settings, setSettings, todayVisits, updateVisit, navigate } = useStore();
+  const { settings, setSettings, todayVisits, updateVisit, navigate, hoursOf } = useStore();
   const clock = useClock();
   const [drag, setDrag] = useState(null); // {visitId, dy}
   const view = settings.homeApptView;
 
-  const openEvent = GCAL_EVENTS.find((e) => e.date === ymd(today()) && e.open);
-  const ranges = openEvent ? parseOpenRanges(openEvent.title) : [];
+  // parsed in the background from the "Clinic Open H-H" calendar event, then editable
+  const ranges = hoursOf(ymd(today()));
 
   // segment layout: pixel offset of each open range; closed time spliced out
   const segs = useMemo(() => {
@@ -195,7 +197,7 @@ function TodayAppointments() {
     <div className="spread" style={{ marginBottom: '.6em', flexWrap: 'wrap', gap: '.5em' }}>
       <h2 className="row"><Icon name="clock" size={18} />{t('home.appointments')}</h2>
       <span className="row" style={{ flexWrap: 'wrap' }}>
-        {openEvent && <span className="muted">{t('home.openHours', { ranges: ranges.map(([a, b]) => `${fmtMin(a)}–${fmtMin(b)}`).join(' · ') })}</span>}
+        {ranges.length > 0 && <span className="muted">({t('home.workingHours', { ranges: ranges.map(([a, b]) => `${fmtMin(a)}–${fmtMin(b)}`).join(' · ') })})</span>}
         <span className="row">
           <button className={`chip ${view === 'schedule' ? 'on' : ''}`} onClick={() => setSettings((s) => ({ ...s, homeApptView: 'schedule' }))}>
             <Icon name="calendar" size={13} />{t('home.viewSchedule')}
@@ -223,7 +225,7 @@ function TodayAppointments() {
     );
   }
 
-  if (!openEvent || segs.length === 0) {
+  if (segs.length === 0) {
     return (
       <div className="card" style={{ padding: '1em' }}>
         {header}

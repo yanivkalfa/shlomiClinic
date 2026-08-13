@@ -135,6 +135,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.6) sepia
 .pulse-line { display: flex; justify-content: space-between; align-items: center; padding: .35em 0; border-bottom: 1px dashed var(--line); font-size: .9em; }
 .pulse-line:last-child { border-bottom: none; }
 .pulse-line b { color: var(--c2); }
+.rp-icons { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: .45em; }
+.notes-nav { display: flex; align-items: center; justify-content: center; gap: .6em; padding-top: .3em; }
+.notes-nav .dots { display: flex; gap: .3em; }
+.notes-nav .dot { width: .5em; height: .5em; border-radius: 50%; background: var(--ink-soft); opacity: .45; cursor: pointer; }
+.notes-nav .dot.on { background: var(--c2); opacity: 1; }
+.rp-reorder { display: flex; flex-direction: column; gap: .35em; }
+.rp-reorder .rp-row { display: flex; align-items: center; gap: .5em; padding: .4em .6em; border: var(--bw) solid var(--line);
+  border-radius: var(--radius-sm); background: color-mix(in srgb, var(--c1) 25%, transparent); }
 
 /* mini calendar */
 .mcal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; font-size: .78em; text-align: center; }
@@ -216,22 +224,36 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .92em; }
 .appt.st-delayed { background: color-mix(in srgb, #e0a43b 18%, var(--card)); border-color: color-mix(in srgb, #e0a43b 55%, transparent); }
 .appt.st-missed { background: color-mix(in srgb, #e05b5b 20%, var(--card)); border-color: color-mix(in srgb, #e05b5b 60%, transparent); }
 /* one shared column template for every block so nothing misaligns between rows */
-.appt-grid { display: grid; gap: .6em; align-items: center; font-size: .84em; }
+.appt-grid { display: grid; gap: .6em; align-items: center; font-size: var(--appt-font, .84em); }
 .appt-note { font-size: .78em; color: var(--ink-soft); display: flex; gap: .4em; align-items: center; margin-top: .25em; }
 .plan-row { display: flex; align-items: center; gap: .5em; flex-wrap: wrap; padding: .5em 0; border-bottom: 1px dashed var(--line); }
 .plan-prods { display: flex; flex-wrap: wrap; gap: .4em; padding-inline-start: 1.4em; }
+/* product image is two text lines tall, per spec */
+.prod-thumb { height: 2.6em; width: 3.4em; object-fit: cover; border-radius: var(--radius-sm); }
+.prod-tbl td, .prod-tbl th { padding: .35em .55em; font-size: .95em; }
+.btn.bin-lg { padding: .5em .7em; }
+.richtext[contenteditable]:empty::before { content: attr(data-placeholder); color: var(--ink-soft); }
+.fc .fc-day-closed { background: color-mix(in srgb, var(--c1) 30%, transparent); opacity: .75; }
 .plan-prod { display: inline-flex; align-items: center; gap: .35em; padding: .2em .55em; border-radius: 2em; font-size: .8em;
   background: color-mix(in srgb, var(--c1) 35%, transparent); border: var(--bw) solid var(--line); }
 .appt-alert { font-size: .78em; color: #f5a3a3; display: flex; gap: .4em; align-items: center; margin-top: .25em; }
 
 /* ---------- user header template ---------- */
-.uheader { display: flex; gap: 1.2em; padding: 1.1em; align-items: flex-start; flex-wrap: wrap; }
+.uheader { display: flex; flex-direction: column; gap: .7em; padding: 1.1em; }
+.uheader-main { display: flex; gap: 1.2em; align-items: flex-start; flex-wrap: wrap; }
+.uheader-footer { display: flex; flex-direction: column; gap: .3em; border-top: 1px dashed var(--line); padding-top: .6em; }
 .uheader .pic { position: relative; flex: none; }
-.uheader .pic img { width: 8.5em; height: 8.5em; }
 .uheader .pic .editfab { position: absolute; bottom: .2em; inset-inline-end: .2em; }
 .uheader .details { flex: 1; min-width: 16rem; display: flex; flex-direction: column; gap: .35em; }
-.socials { display: flex; gap: .5em; }
-.socials .soc { width: 1.9em; height: 1.9em; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: var(--bw) solid var(--line); position: relative; }
+.hdr-line1 { gap: .8em; }
+.hdr-line1 h2 { font-size: 1.35em; }
+.hdr-ref { gap: .35em; }
+.hdr-contact { gap: 1.1em; font-size: 1em; }
+.hdr-contact svg { color: var(--c2); }
+.iconbtn.on { background: color-mix(in srgb, var(--c2) 55%, transparent); color: #221a06; }
+.link-edit { color: var(--c2); text-decoration: underline; font-size: .88em; }
+.socials { display: flex; gap: .6em; }
+.socials .soc { width: 2.3em; height: 2.3em; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: var(--bw) solid var(--line); position: relative; }
 .socials .soc.off { opacity: .35; filter: grayscale(1); }
 .socials .soc .st { position: absolute; bottom: -3px; inset-inline-end: -3px; width: .95em; height: .95em; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .6em; color: #fff; }
 .socials .soc .st.y { background: #3bb273; } .socials .soc .st.n { background: #e05b5b; }
@@ -253,8 +275,16 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .92em; }
 .cmp.fullscreen .cmp-thumbs { max-height: none; }
 .cmp-thumbs img { width: 100%; border-radius: var(--radius-sm); border: 2px solid transparent; cursor: pointer; }
 .cmp-thumbs img.sel { border-color: var(--c2); box-shadow: var(--glow); }
-/* gap:0 — spec requires no spaces between the images in the comparison area */
-.cmp-view { display: grid; gap: 0; border-radius: var(--radius); overflow: hidden; border: var(--bw) solid var(--line); }
+.cmp-thumb { position: relative; display: block; }
+.cmp-thumb-del { position: absolute; bottom: .25em; inset-inline-end: .25em; width: 1.5em; height: 1.5em;
+  background: color-mix(in srgb, #000 55%, transparent); opacity: 0; transition: opacity .15s; }
+.cmp-thumb:hover .cmp-thumb-del { opacity: 1; }
+/* gap:0 — images sit flush; the hairline divider below is the only separation */
+.cmp-view { display: grid; gap: 0; border-radius: var(--radius); overflow: hidden; border: var(--bw) solid var(--line); position: relative; }
+.cmp-view.bordered.side .cmp-cell + .cmp-cell { border-inline-start: 1px solid color-mix(in srgb, var(--c2) 35%, transparent); }
+.cmp-view.bordered.stack .cmp-cell + .cmp-cell { border-top: 1px solid color-mix(in srgb, var(--c2) 35%, transparent); }
+.cmp-logo { position: absolute; bottom: .5em; inset-inline-end: .6em; width: 2.4em; height: 2.4em; border-radius: 50%;
+  opacity: .85; z-index: 3; pointer-events: none; }
 .cmp-view.side { grid-template-columns: 1fr 1fr; }
 .cmp-view.stack { grid-template-rows: 1fr 1fr; }
 .cmp-view.overlay { grid-template-columns: 1fr; }
